@@ -5,7 +5,13 @@ const cors = require('cors');
 
 dotenv.config();
 const app = express();
-app.use(cors());
+
+const corsOptions = {
+  origin: '*', // 👈 You can replace with specific frontend URL later
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const authRoutes = require('./routes/authRoutes');
