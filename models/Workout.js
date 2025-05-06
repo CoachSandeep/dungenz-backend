@@ -1,11 +1,32 @@
 const mongoose = require('mongoose');
 
 const workoutSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: { type: String },
-  date: { type: Date, required: true },
-  version: { type: String, enum: ['Ultra Train', 'Super Train', 'Minimal Equipment', 'Beginner'], required: true },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  title: String,
+  customName: String,
+  description: String,
+  instructions: String,
+  date: Date,
+  version: String,
+  capTime: String,
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  isStarred: {
+    type: Boolean,
+    default: false,
+  },
+  isInLibrary: {
+    type: Boolean,
+    default: false,
+  },
+  copiedFrom: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Workout',
+    default: null,
+  },
+ version: { type: String, enum: ['Ultra Train', 'Super Train', 'Minimal Equipment', 'Beginner'], required: true },
+ 
 }, { timestamps: true });
 
 module.exports = mongoose.model('Workout', workoutSchema);
