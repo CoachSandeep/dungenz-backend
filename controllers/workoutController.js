@@ -32,3 +32,16 @@ exports.listWorkouts = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// Delete Workout
+exports.deleteWorkout = async (req, res) => {
+  try {
+    const deletedWorkout = await Workout.findByIdAndDelete(req.params.id);
+    if (!deletedWorkout) {
+      return res.status(404).json({ message: 'Workout not found' });
+    }
+    res.json({ message: 'Workout deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error deleting workout', error: err.message });
+  }
+};
