@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose'); // ✅ ADD THIS LINE
 const router = express.Router();
 const Workout = require('../models/Workout');
 const authenticate = require('../middleware/authMiddleware');
