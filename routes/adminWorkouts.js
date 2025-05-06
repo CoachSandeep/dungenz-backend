@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Workout = require('../models/Workout');
-const authenticate = require('../middleware/authenticate');
+const authenticate = require('../middleware/authMiddleware');
 const checkRole = require('../middleware/checkRole');
 
 // ✅ Get all workouts (for admin panel)
