@@ -54,4 +54,35 @@ router.patch('/:id/library', authenticate, checkRole('superadmin'), async (req, 
   res.json({ library: workout.isInLibrary });
 });
 
+
+router.put('/bulk-update', authenticate, checkRole('superadmin'), async (req, res) => {
+  const { workouts } = req.body;
+
+  try {
+    const bulkOps = workouts.map((w) => ({
+      updateOne: {
+        filter: { _id: w._id },
+        update: {
+          $set: {
+            title: w.title,
+            customName: w.customName,
+            description: w.description,
+            instruction: w.instruction,
+            capTime: w.capTime || '',
+            order: w.order || 0,
+          },
+        },
+      },
+    }));
+
+    await Workout.bulkWrite(bulkOps);
+    res.json({ message: 'Cluster updated successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Bulk update failed' });
+  }
+});
+
+
+
 module.exports = router;
