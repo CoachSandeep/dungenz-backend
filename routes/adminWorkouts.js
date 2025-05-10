@@ -83,6 +83,44 @@ router.put('/bulk-update', authenticate, checkRole('superadmin'), async (req, re
   }
 });
 
+router.post('/cluster-copy', authenticate, checkRole('superadmin'), async (req, res) => {
+  const { date, fromVersion, toVersions } = req.body;
+
+  try {
+    const startDate = new Date(date);
+    const endDate = new Date(startDate.getTime() + 86400000); // +1 day
+
+    const original = await Workout.find({
+      version: fromVersion,
+      date: { $gte: startDate, $lt: endDate },
+    });
+
+    const copies = [];
+
+    for (let toVersion of toVersions) {
+      for (let w of original) {
+        const copy = new Workout({
+          title: w.title,
+          description: w.description,
+          capTime: w.capTime,
+          customName: w.customName,
+          instructions: w.instructions,
+          version: toVersion,
+          date: w.date,
+          createdBy: req.user._id,
+          copiedFrom: w._id,
+        });
+        await copy.save();
+        copies.push(copy);
+      }
+    }
+
+    res.json({ message: 'Cluster copied', copies });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Copy failed' });
+  }
+});
 
 
 module.exports = router;
