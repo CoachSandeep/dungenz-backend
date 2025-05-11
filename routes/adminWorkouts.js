@@ -54,6 +54,15 @@ router.patch('/:id/library', authenticate, checkRole('superadmin'), async (req, 
   res.json({ library: workout.isInLibrary });
 });
 
+// ✅ Get all library workouts
+router.get('/library', authenticate, checkRole('superadmin'), async (req, res) => {
+  try {
+    const workouts = await Workout.find({ isInLibrary: true }).sort({ updatedAt: -1 });
+    res.json(workouts);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch library workouts' });
+  }
+});
 
 router.put('/bulk-update', authenticate, checkRole('superadmin'), async (req, res) => {
   const { workouts } = req.body;
