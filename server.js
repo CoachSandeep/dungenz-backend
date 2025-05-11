@@ -9,7 +9,7 @@ const app = express();
 
 const corsOptions = {
   origin: '*', // 👈 You can replace with specific frontend URL later
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
