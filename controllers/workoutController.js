@@ -2,13 +2,17 @@ const Workout = require('../models/Workout');
 
 // Upload a Workout
 exports.uploadWorkout = async (req, res) => {
-  const { title, description, date, version } = req.body;
+  const { title, description, date, version, capTime, instructions, customName, icon } = req.body;
   try {
     const newWorkout = await Workout.create({
       title,
       description,
       date,
       version,
+      capTime,
+      instructions,
+      customName,
+      icon,
       createdBy: req.user.id
     });
     res.status(201).json(newWorkout);
