@@ -7,6 +7,7 @@ const workoutSchema = new mongoose.Schema({
   instructions: String,
   date: Date,
   capTime: String,
+  icon: String,
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
