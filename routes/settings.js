@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Settings = require('../models/settings');
-const { verifyAdmin } = require('../middleware/auth');
+const { verifyAdmin } = require('../middleware/authMiddleware');
 
 // Get settings
 router.get('/', verifyAdmin, async (req, res) => {
