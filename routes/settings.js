@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Settings = require('../models/settings');
 const { authenticate } = require('../middleware/authMiddleware');
+const checkRole = require('../middleware/checkRole');
 
 
 // Get settings
