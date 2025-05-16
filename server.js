@@ -19,6 +19,9 @@ app.use('/api/admin/workouts', adminWorkouts);
 const authRoutes = require('./routes/authRoutes');
 const workoutRoutes = require('./routes/workoutRoutes');
 
+const settingsRoutes = require('./routes/settings');
+app.use('/api/settings', settingsRoutes);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/workouts', workoutRoutes);
 
