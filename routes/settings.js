@@ -1,16 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const Settings = require('../models/settings');
-const { verifyAdmin } = require('../middleware/authMiddleware');
+const { authenticate } = require('../middleware/authMiddleware');
+
 
 // Get settings
-router.get('/', verifyAdmin, async (req, res) => {
+router.get('/', authenticate, checkRole('superadmin'), async (req, res) => {
   const settings = await Settings.findOne() || await Settings.create({});
   res.json({ releaseTime: settings.releaseTime });
 });
 
 // Update release time
-router.put('/', verifyAdmin, async (req, res) => {
+router.put('/', authenticate, checkRole('superadmin'), async (req, res) => {
   const { releaseTime } = req.body;
   const settings = await Settings.findOneAndUpdate(
     {},
