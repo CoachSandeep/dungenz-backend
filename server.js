@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const adminWorkouts = require('./routes/adminWorkouts');
+const settings = require('./routes/settings');
 
 dotenv.config();
 const app = express();
@@ -19,8 +20,8 @@ app.use('/api/admin/workouts', adminWorkouts);
 const authRoutes = require('./routes/authRoutes');
 const workoutRoutes = require('./routes/workoutRoutes');
 
-const settingsRoutes = require('./routes/settings');
-app.use('/api/settings', settingsRoutes);
+// const settingsRoutes = require('./routes/settings');
+app.use('/api/settings', settings);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/workouts', workoutRoutes);
