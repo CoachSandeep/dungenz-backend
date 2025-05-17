@@ -12,12 +12,12 @@ router.get('/', authenticate, async (req, res) => {
     res.json({ releaseTime: settings.releaseTime });
   });
   
-  // ✅ PUT route: Only superadmin can update
-  router.put('/', authenticate, checkRole('superadmin'), async (req, res) => {
+// Update release time
+router.put('/', authenticate, checkRole('superadmin'), async (req, res) => {
     const { releaseTime } = req.body;
     const settings = await Settings.findOneAndUpdate(
       {},
-      { releaseTime }, // no Date() now because we're using HH:mm string
+      { releaseTime },  // ✅ just save string like "21:00"
       { new: true, upsert: true }
     );
     res.json(settings);
