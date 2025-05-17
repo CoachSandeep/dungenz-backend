@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose'); // ✅ ADD THIS LINE
 const router = express.Router();
 const Settings = require('../models/settings');
-const { authenticate } = require('../middleware/authMiddleware');
+const authenticate = require('../middleware/authMiddleware');
 const checkRole = require('../middleware/checkRole');
 
 
