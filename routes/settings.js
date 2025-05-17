@@ -12,14 +12,20 @@ router.get('/', authenticate, async (req, res) => {
     res.json({ releaseTime: settings.releaseTime });
   });
   
-// Update release time
+// ✅ Only superadmin can update
 router.put('/', authenticate, checkRole('superadmin'), async (req, res) => {
     const { releaseTime } = req.body;
+  
+    if (!releaseTime || typeof releaseTime !== 'string') {
+      return res.status(400).json({ error: 'Invalid release time' });
+    }
+  
     const settings = await Settings.findOneAndUpdate(
       {},
-      { releaseTime },  // ✅ just save string like "21:00"
+      { releaseTime }, // ✅ save as plain "HH:mm"
       { new: true, upsert: true }
     );
+  
     res.json(settings);
   });
 
