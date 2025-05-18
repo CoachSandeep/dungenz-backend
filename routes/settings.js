@@ -13,7 +13,7 @@ router.get('/', authenticate, async (req, res) => {
   });
   
 // ✅ Only superadmin can update
-router.put('/', authenticate, checkRole('superadmin'), async (req, res) => {
+router.post('/update', authenticate, checkRole('superadmin'), async (req, res) => {
     const { releaseTime } = req.body;
   
     if (!releaseTime || typeof releaseTime !== 'string') {
