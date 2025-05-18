@@ -30,8 +30,11 @@ exports.login = async (req, res) => {
    const token = jwt.sign(
   { id: user._id },
   process.env.JWT_SECRET, // ✅ This line must use env
-  { expiresIn: '1d' }
-);
+  { expiresIn: '1d' });
+
+  console.log("🪙 Issued token:", token);
+console.log("🔐 Secret used:", process.env.JWT_SECRET); // this MUST match Render value
+
     res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch (err) {
     res.status(500).json({ message: err.message });
