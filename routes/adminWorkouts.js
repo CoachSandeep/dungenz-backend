@@ -31,9 +31,15 @@ router.post('/:id/copy', authenticate, checkRole('superadmin'), async (req, res)
 
     const { date, ...rest } = original._doc;
 
+    const safeDate = date ? new Date(date) : new Date(); // ✅ fallback to now if undefined
+
+    if (isNaN(safeDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid date in original workout' });
+    }
+
     const copied = new Workout({
       ...rest,
-      date: new Date(date), // ✅ convert to Date object
+      date: safeDate, // ✅ safe & valid
       _id: mongoose.Types.ObjectId(),
       isNew: true,
       copiedFrom: original._id,
@@ -44,10 +50,11 @@ router.post('/:id/copy', authenticate, checkRole('superadmin'), async (req, res)
     await copied.save();
     res.json(copied);
   } catch (err) {
-    console.error("❌ Copy failed:", err.message);
-    res.status(500).json({ message: 'Copy failed' });
+    console.error("❌ Workout copy failed:", err.message);
+    res.status(500).json({ message: 'Copy failed', error: err.message });
   }
 });
+
 
 
 // ✅ Star a workout
