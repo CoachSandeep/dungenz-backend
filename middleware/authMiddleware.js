@@ -12,11 +12,13 @@ console.log("🔐 JWT_SECRET used for verify:", process.env.JWT_SECRET);
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("✅ Token verified:", decoded);
     const user = await User.findById(decoded.id);
     if (!user) return res.status(401).json({ message: 'Invalid token' });
     req.user = user;
     next();
   } catch (err) {
+    console.error("❌ JWT verification failed:", err.message);
     res.status(401).json({ message: 'Invalid token' });
   }
 };
