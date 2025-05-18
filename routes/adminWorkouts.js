@@ -25,13 +25,21 @@ router.delete('/:id/delete', authenticate, checkRole('superadmin'), async (req, 
 
 // ✅ Copy workout (fixed with date cast)
 router.post('/:id/copy', authenticate, checkRole('superadmin'), async (req, res) => {
+  console.log("📌 Copy route hit");
+  console.log("🧾 ID received:", req.params.id);
+
+  const id = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: 'Invalid workout ID' });
+  }
+
   try {
-    const original = await Workout.findById(req.params.id);
+    const original = await Workout.findById(id);
     if (!original) return res.status(404).json({ message: 'Workout not found' });
 
     const { date, ...rest } = original._doc;
-
-    const safeDate = date ? new Date(date) : new Date(); // ✅ fallback to now if undefined
+    const safeDate = date ? new Date(date) : new Date();
 
     if (isNaN(safeDate.getTime())) {
       return res.status(400).json({ message: 'Invalid date in original workout' });
@@ -39,7 +47,7 @@ router.post('/:id/copy', authenticate, checkRole('superadmin'), async (req, res)
 
     const copied = new Workout({
       ...rest,
-      date: safeDate, // ✅ safe & valid
+      date: safeDate,
       _id: mongoose.Types.ObjectId(),
       isNew: true,
       copiedFrom: original._id,
@@ -54,6 +62,7 @@ router.post('/:id/copy', authenticate, checkRole('superadmin'), async (req, res)
     res.status(500).json({ message: 'Copy failed', error: err.message });
   }
 });
+
 
 
 
