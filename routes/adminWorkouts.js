@@ -23,20 +23,32 @@ router.delete('/:id/delete', authenticate, checkRole('superadmin'), async (req, 
   res.json({ message: 'Workout deleted' });
 });
 
-// ✅ Copy workout
+// ✅ Copy workout (fixed with date cast)
 router.post('/:id/copy', authenticate, checkRole('superadmin'), async (req, res) => {
-  const original = await Workout.findById(req.params.id);
-  const copied = new Workout({
-    ...original._doc,
-    _id: mongoose.Types.ObjectId(),
-    isNew: true,
-    copiedFrom: original._id,
-    createdBy: req.user._id,
-    title: `${original.title} (Copy)`
-  });
-  await copied.save();
-  res.json(copied);
+  try {
+    const original = await Workout.findById(req.params.id);
+    if (!original) return res.status(404).json({ message: 'Workout not found' });
+
+    const { date, ...rest } = original._doc;
+
+    const copied = new Workout({
+      ...rest,
+      date: new Date(date), // ✅ convert to Date object
+      _id: mongoose.Types.ObjectId(),
+      isNew: true,
+      copiedFrom: original._id,
+      createdBy: req.user._id,
+      title: `${original.title} (Copy)`
+    });
+
+    await copied.save();
+    res.json(copied);
+  } catch (err) {
+    console.error("❌ Copy failed:", err.message);
+    res.status(500).json({ message: 'Copy failed' });
+  }
 });
+
 
 // ✅ Star a workout
 router.patch('/:id/star', authenticate, checkRole('superadmin'), async (req, res) => {
@@ -115,7 +127,7 @@ router.post('/cluster-copy', authenticate, checkRole('superadmin'), async (req, 
           customName: w.customName,
           instructions: w.instructions,
           version: toVersion,
-          date: w.date,
+          date: new Date(w.date), // ✅ force cast
           createdBy: req.user._id,
           copiedFrom: w._id,
         });
