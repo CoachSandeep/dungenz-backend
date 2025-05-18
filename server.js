@@ -9,7 +9,8 @@ dotenv.config();
 const app = express();
 
 const corsOptions = {
-  origin: 'https://dungenz-frontend.onrender.com', // 👈 You can replace with specific frontend URL later
+  origin: 'https://dungenz-frontend.onrender.com', // ✅ Your frontend domain
+  credentials: true, // ✅ Send cookies/tokens if needed
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
