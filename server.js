@@ -16,7 +16,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 // Handle OPTIONS requests (preflight)
-app.options('*', cors(corsOptions));
+// app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use('/api/admin/workouts', adminWorkouts);
 
