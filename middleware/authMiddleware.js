@@ -2,7 +2,15 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 module.exports = async (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  console.log("🔍 Received headers:", req.headers);
+ // const token = req.headers.authorization?.split(' ')[1];
+
+ const token = jwt.sign(
+  { id: User._id },
+  process.env.JWT_SECRET,          // ✅ Should use ENV value
+  { expiresIn: '1d' }
+);
+
   if (!token) return res.status(401).json({ message: 'No token provided' });
 
   try {
