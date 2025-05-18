@@ -14,21 +14,26 @@ router.get('/', authenticate, async (req, res) => {
   
 // ✅ Only superadmin can update
 router.post('/update', authenticate, checkRole('superadmin'), async (req, res) => {
+  try {
+    console.log("📬 /api/settings/update hit");
+    console.log("📦 Body:", req.body);
+
     const { releaseTime } = req.body;
-  
-    if (!releaseTime || typeof releaseTime !== 'string') {
-      return res.status(400).json({ error: 'Invalid release time' });
-    }
-  
+    if (!releaseTime) return res.status(400).json({ message: 'Missing releaseTime' });
+
     const settings = await Settings.findOneAndUpdate(
       {},
-      { releaseTime }, // ✅ save as plain "HH:mm"
+      { releaseTime },
       { new: true, upsert: true }
     );
-  
-    res.json(settings);
-  });
 
+    console.log("✅ Release time saved:", settings);
+    res.json({ success: true, releaseTime });
+  } catch (err) {
+    console.error("❌ Error saving release time:", err.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
   router.post('/test', authenticate, checkRole('superadmin'), (req, res) => {
     console.log("🧪 /api/settings/test hit");
     console.log("🔑 Token user:", req.user?.name);
