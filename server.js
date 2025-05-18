@@ -15,6 +15,8 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
+// Handle OPTIONS requests (preflight)
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use('/api/admin/workouts', adminWorkouts);
 
