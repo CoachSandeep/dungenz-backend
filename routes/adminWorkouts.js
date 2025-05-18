@@ -48,7 +48,7 @@ router.post('/:id/copy', authenticate, checkRole('superadmin'), async (req, res)
     const copied = new Workout({
       ...rest,
       date: safeDate,
-      _id: mongoose.Types.ObjectId(),
+      _id: new mongoose.Types.ObjectId(), // ✅ fixed
       isNew: true,
       copiedFrom: original._id,
       createdBy: req.user._id,
