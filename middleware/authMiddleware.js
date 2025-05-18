@@ -3,13 +3,7 @@ const User = require('../models/User');
 
 module.exports = async (req, res, next) => {
   console.log("🔍 Received headers:", req.headers);
- // const token = req.headers.authorization?.split(' ')[1];
-
- const token = jwt.sign(
-  { id: User._id },
-  process.env.JWT_SECRET,          // ✅ Should use ENV value
-  { expiresIn: '1d' }
-);
+  const token = req.headers.authorization?.split(' ')[1];
 
   if (!token) return res.status(401).json({ message: 'No token provided' });
 
