@@ -29,4 +29,12 @@ router.post('/update', authenticate, checkRole('superadmin'), async (req, res) =
     res.json(settings);
   });
 
+  router.post('/test', authenticate, checkRole('superadmin'), (req, res) => {
+    console.log("🧪 /api/settings/test hit");
+    console.log("🔑 Token user:", req.user?.name);
+    console.log("📦 Request body:", req.body);
+  
+    res.json({ message: "Test route working fine", body: req.body });
+  });
+
 module.exports = router;
