@@ -25,10 +25,21 @@ exports.uploadWorkout = async (req, res) => {
 exports.listWorkouts = async (req, res) => {
   const { date } = req.query;
   let filter = {};
-  if (date) {
+
+  console.log('📆 Incoming query date:', date);
+  console.log('🔐 Token:', req.headers.authorization);
+
+  if (date && !isNaN(new Date(date))) {
     const selectedDate = new Date(date);
-    filter.date = { $gte: selectedDate, $lt: new Date(selectedDate.getTime() + 24 * 60 * 60 * 1000) };
+    filter.date = {
+      $gte: selectedDate,
+      $lt: new Date(selectedDate.getTime() + 24 * 60 * 60 * 1000)
+    };
+  } else if (date) {
+    console.warn('⚠️ Invalid date format in query:', date);
+    return res.status(400).json({ message: 'Invalid date format' });
   }
+
   try {
     const workouts = await Workout.find(filter).populate('createdBy', 'name');
     res.json(workouts);
