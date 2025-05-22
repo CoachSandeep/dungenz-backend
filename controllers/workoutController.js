@@ -60,3 +60,27 @@ exports.deleteWorkout = async (req, res) => {
     res.status(500).json({ message: 'Error deleting workout', error: err.message });
   }
 };
+
+// List Workouts within a range
+exports.listWorkoutsInRange = async (req, res) => {
+  const { from, to } = req.query;
+
+  if (!from || !to) {
+    return res.status(400).json({ message: 'Both from and to dates are required.' });
+  }
+
+  try {
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    toDate.setHours(23, 59, 59, 999); // include entire day
+
+    const workouts = await Workout.find({
+      date: { $gte: fromDate, $lte: toDate }
+    }).populate('createdBy', 'name');
+
+    res.json(workouts);
+  } catch (err) {
+    console.error('❌ Error in range fetch:', err);
+    res.status(500).json({ message: 'Error fetching workouts in range' });
+  }
+};
