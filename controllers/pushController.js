@@ -1,10 +1,9 @@
 const PushToken = require('../models/PushToken');
 const admin = require('firebase-admin');
 
-// Initialize only once
-if (!admin.apps.length) {
-  const serviceAccount = require('../config/firebase-service-account.json'); // 🔐 update path if needed
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
+if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
   });
