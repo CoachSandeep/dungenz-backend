@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const adminWorkouts = require('./routes/adminWorkouts');
 const settings = require('./routes/settings');
+const pushRoutes = require('./routes/pushRoutes');
 
 dotenv.config();
 const app = express();
@@ -22,6 +23,8 @@ app.use('/api/admin/workouts', adminWorkouts);
 
 const authRoutes = require('./routes/authRoutes');
 const workoutRoutes = require('./routes/workoutRoutes');
+
+app.use('/api/push', pushRoutes);
 
 // const settingsRoutes = require('./routes/settings');
 app.use('/api/settings', settings);

@@ -1,0 +1,8 @@
+# Ignore Firebase credentials
+/config/firebase-service-account.json
+
+# Ignore node_modules
+/node_modules
+
+# Ignore environment variables
+.env
