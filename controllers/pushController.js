@@ -44,6 +44,7 @@ exports.sendPushToAll = async (req, res) => {
 
   try {
     const tokens = await PushToken.find().select('token -_id');
+    console.log("📡 Sending to tokens:", tokens);  // Log token list
     const messages = tokens.map(({ token }) => ({
       token,
       notification: {
@@ -53,6 +54,7 @@ exports.sendPushToAll = async (req, res) => {
     }));
 
     const response = await admin.messaging().sendEach(messages);
+    console.log("📬 FCM Response:", response);
     res.json({ message: 'Push sent to all devices.', response });
   } catch (err) {
     res.status(500).json({ message: 'Error sending push notifications.', error: err.message });
