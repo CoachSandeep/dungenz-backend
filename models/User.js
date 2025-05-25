@@ -8,6 +8,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['member', 'admin', 'superadmin'],
     default: 'member',
+    bio: String,
+  gender: String,
+  age: Number,
+  profileImage: String, // URL to image
   },
 }, { timestamps: true });
 

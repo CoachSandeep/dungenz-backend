@@ -5,6 +5,8 @@ const cors = require('cors');
 const adminWorkouts = require('./routes/adminWorkouts');
 const settings = require('./routes/settings');
 const pushRoutes = require('./routes/pushRoutes');
+const userRoutes = require('./routes/UserRoutes');
+const path = require('path');
 
 dotenv.config();
 const app = express();
@@ -20,6 +22,9 @@ app.use(cors(corsOptions));
 // app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use('/api/admin/workouts', adminWorkouts);
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/api/users', userRoutes);
 
 const authRoutes = require('./routes/authRoutes');
 const workoutRoutes = require('./routes/workoutRoutes');
