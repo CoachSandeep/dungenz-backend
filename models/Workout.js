@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const workoutSchema = new mongoose.Schema({
   title: String,
   customName: String,
+  summary: { type: String, default: '' },  // <-- 👈 ADD THIS LINE
   description: String,
   instructions: String,
   date: Date,
