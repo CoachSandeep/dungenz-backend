@@ -1,3 +1,4 @@
+// controllers/pushController.js
 const PushToken = require('../models/PushToken');
 const admin = require('firebase-admin');
 
@@ -9,33 +10,6 @@ if (!admin.apps.length) {
   });
 }
 
-// Save FCM Token
-exports.saveToken = async (req, res) => {
-  const { token } = req.body;
-  const userId = req.user.id;
-
-  try {
-    const exists = await PushToken.findOne({ userId, token });
-    if (!exists) {
-      await PushToken.create({ userId, token });
-    }
-    res.status(200).json({ message: 'Token saved successfully.' });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to save token.', error: err.message });
-  }
-};
-
-// Get All Tokens (Admin only)
-exports.getAllTokens = async (req, res) => {
-  try {
-    const tokens = await PushToken.find().select('token -_id');
-    res.json(tokens.map(t => t.token));
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching tokens', error: err.message });
-  }
-};
-
-// ✅ Send Push Notification to All Users
 exports.sendPushToAll = async (req, res) => {
   const { title, body } = req.body;
   if (!title || !body) {
@@ -44,23 +18,28 @@ exports.sendPushToAll = async (req, res) => {
 
   try {
     const tokens = await PushToken.find().select('token -_id');
-    const tokenList = tokens.map(t => t.token);
+    const tokenList = tokens.map(t => t.token).filter(Boolean);
+
+    if (tokenList.length === 0) {
+      return res.status(400).json({ message: 'No tokens found.' });
+    }
 
     const message = {
       notification: { title, body },
-      tokens: tokenList,
+      tokens: tokenList
     };
 
     const response = await admin.messaging().sendMulticast(message);
-    console.log("📬 FCM Response:", response);
 
+    console.log("✅ Push sent. Success:", response.successCount, " Failures:", response.failureCount);
     res.json({
       message: 'Push sent to all devices.',
       successCount: response.successCount,
       failureCount: response.failureCount,
+      responses: response.responses
     });
   } catch (err) {
-    res.status(500).json({ message: 'Error sending push notifications.', error: err.message });
+    console.error("❌ Push failed:", err);
+    res.status(500).json({ message: 'Push failed.', error: err.message });
   }
 };
-
