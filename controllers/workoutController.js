@@ -65,7 +65,6 @@ exports.deleteWorkout = async (req, res) => {
 // List Workouts within a range
 exports.listWorkoutsInRange = async (req, res) => {
   const { from, to } = req.query;
-  const user = req.user;
 
   if (!from || !to) {
     return res.status(400).json({ message: 'Both from and to dates are required.' });
@@ -76,35 +75,27 @@ exports.listWorkoutsInRange = async (req, res) => {
     const toDate = new Date(to);
     toDate.setHours(23, 59, 59, 999); // include entire day
 
-    let visibleToDate = toDate;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const currentDate = new Date(now.toISOString().split("T")[0]);
 
-    const settings = await Settings.findOne();
-    const releaseTimeStr = settings?.releaseTime || '21:00';
-    const [releaseHour, releaseMinute] = releaseTimeStr.split(':').map(Number);
+    // Fetch release time from settings (assuming you have a Settings model)
+  
+    const setting = await Setting.findOne();
+    const releaseTime = setting?.releaseTime || "21:00";
+    const [releaseHour, releaseMinute] = releaseTime.split(":".map(Number));
 
-    const releaseDateTime = new Date(today);
+    const releaseDateTime = new Date(currentDate);
     releaseDateTime.setHours(releaseHour, releaseMinute, 0, 0);
 
-    if (user.role !== 'superadmin') {
-      const now = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      if (now >= releaseDateTime) {
-        visibleToDate = new Date(tomorrow);
-        visibleToDate.setHours(23, 59, 59, 999);
-      } else {
-        visibleToDate = today;
-        visibleToDate.setHours(23, 59, 59, 999);
+    // Determine which dates to allow
+    const filter = {
+      date: {
+        $gte: fromDate,
+        $lte: new Date(currentDate.getTime() + (now >= releaseDateTime ? 86400000 : 0))
       }
-    }
+    };
 
-    const workouts = await Workout.find({
-      date: { $gte: fromDate, $lte: visibleToDate }
-    }).populate('createdBy', 'name');
-
+    const workouts = await Workout.find(filter).populate('createdBy', 'name');
     res.json(workouts);
   } catch (err) {
     console.error('❌ Error in range fetch:', err);
