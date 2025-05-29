@@ -147,7 +147,7 @@ router.post('/cluster-copy', authenticate, checkRole('superadmin'), async (req, 
           customName: w.customName,
           instructions: w.instructions,
           version: toVersion,
-          date: new Date(w.date), // ✅ force cast
+          date: new Date(date), // 👈 user-selected date from req.body
           createdBy: req.user._id,
           copiedFrom: w._id,
         });
