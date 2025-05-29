@@ -54,8 +54,8 @@ exports.sendPushToAll = async (req, res) => {
       notification: { title, body },
       tokens: tokenList
     };
-
-    const response = await admin.messaging().sendMulticast(message);
+    const response = await admin.messaging().sendEach(messages);
+    //const response = await admin.messaging().sendMulticast(message);
 
     console.log("✅ Push sent. Success:", response.successCount, " Failures:", response.failureCount);
     res.json({
