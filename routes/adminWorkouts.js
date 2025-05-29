@@ -35,20 +35,23 @@ router.post('/:id/copy', authenticate, checkRole('superadmin'), async (req, res)
   }
 
   try {
+    const { toVersion, targetDate } = req.body;
+
     const original = await Workout.findById(id);
     if (!original) return res.status(404).json({ message: 'Workout not found' });
 
     const { date, ...rest } = original._doc;
-    const safeDate = date ? new Date(date) : new Date();
+    const safeDate = targetDate ? new Date(targetDate) : new Date(date);
 
     if (isNaN(safeDate.getTime())) {
-      return res.status(400).json({ message: 'Invalid date in original workout' });
+      return res.status(400).json({ message: 'Invalid target date' });
     }
 
     const copied = new Workout({
       ...rest,
+      version: toVersion,
       date: safeDate,
-      _id: new mongoose.Types.ObjectId(), // ✅ fixed
+      _id: new mongoose.Types.ObjectId(),
       isNew: true,
       copiedFrom: original._id,
       createdBy: req.user._id,
@@ -62,6 +65,7 @@ router.post('/:id/copy', authenticate, checkRole('superadmin'), async (req, res)
     res.status(500).json({ message: 'Copy failed', error: err.message });
   }
 });
+
 
 
 
