@@ -65,6 +65,7 @@ exports.deleteWorkout = async (req, res) => {
 // List Workouts within a range
 exports.listWorkoutsInRange = async (req, res) => {
   const { from, to } = req.query;
+  const user = req.user;
 
   if (!from || !to) {
     return res.status(400).json({ message: 'Both from and to dates are required.' });
@@ -75,24 +76,34 @@ exports.listWorkoutsInRange = async (req, res) => {
     const toDate = new Date(to);
     toDate.setHours(23, 59, 59, 999); // include entire day
 
-    let workouts = await Workout.find({
-      date: { $gte: fromDate, $lte: toDate }
-    }).populate('createdBy', 'name');
+    let visibleToDate = toDate;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    // ✅ Apply release time filter
     const settings = await Settings.findOne();
-    const releaseTime = settings?.releaseTime || '05:00';
+    const releaseTimeStr = settings?.releaseTime || '21:00';
+    const [releaseHour, releaseMinute] = releaseTimeStr.split(':').map(Number);
 
-    const now = new Date();
-    const todayKey = now.toISOString().split('T')[0];
-    const [hour, minute] = releaseTime.split(':');
-    const releaseDateTime = new Date(`${todayKey}T${hour}:${minute}:00`);
+    const releaseDateTime = new Date(today);
+    releaseDateTime.setHours(releaseHour, releaseMinute, 0, 0);
 
-    if (now < releaseDateTime) {
-      workouts = workouts.filter(
-        (w) => w.date.toISOString().split('T')[0] !== todayKey
-      );
+    if (user.role !== 'superadmin') {
+      const now = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      if (now >= releaseDateTime) {
+        visibleToDate = new Date(tomorrow);
+        visibleToDate.setHours(23, 59, 59, 999);
+      } else {
+        visibleToDate = today;
+        visibleToDate.setHours(23, 59, 59, 999);
+      }
     }
+
+    const workouts = await Workout.find({
+      date: { $gte: fromDate, $lte: visibleToDate }
+    }).populate('createdBy', 'name');
 
     res.json(workouts);
   } catch (err) {
@@ -100,3 +111,4 @@ exports.listWorkoutsInRange = async (req, res) => {
     res.status(500).json({ message: 'Error fetching workouts in range' });
   }
 };
+
