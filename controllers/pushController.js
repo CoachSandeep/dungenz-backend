@@ -1,4 +1,3 @@
-// controllers/pushController.js
 const PushToken = require('../models/PushToken');
 const admin = require('firebase-admin');
 
@@ -9,6 +8,33 @@ if (!admin.apps.length) {
     credential: admin.credential.cert(serviceAccount)
   });
 }
+
+// Save FCM Token
+exports.saveToken = async (req, res) => {
+  const { token } = req.body;
+  const userId = req.user.id;
+
+  try {
+    const exists = await PushToken.findOne({ token });
+    if (!exists) {
+      await PushToken.create({ userId, token });
+    }
+    res.status(200).json({ message: 'Token saved successfully.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to save token.', error: err.message });
+  }
+};
+
+// Get All Tokens (Admin only)
+exports.getAllTokens = async (req, res) => {
+  try {
+    const tokens = await PushToken.find().select('token -_id');
+    res.json(tokens.map(t => t.token));
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching tokens', error: err.message });
+  }
+};
+
 
 exports.sendPushToAll = async (req, res) => {
   const { title, body } = req.body;
@@ -43,3 +69,5 @@ exports.sendPushToAll = async (req, res) => {
     res.status(500).json({ message: 'Push failed.', error: err.message });
   }
 };
+
+
