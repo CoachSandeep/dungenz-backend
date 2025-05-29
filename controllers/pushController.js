@@ -15,7 +15,7 @@ exports.saveToken = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    const exists = await PushToken.findOne({ token });
+    const exists = await PushToken.findOne({ userId, token });
     if (!exists) {
       await PushToken.create({ userId, token });
     }
@@ -44,19 +44,23 @@ exports.sendPushToAll = async (req, res) => {
 
   try {
     const tokens = await PushToken.find().select('token -_id');
-    console.log("📡 Sending to tokens:", tokens);  // Log token list
-    const messages = tokens.map(({ token }) => ({
-      token,
-      notification: {
-        title,
-        body
-      }
-    }));
+    const tokenList = tokens.map(t => t.token);
 
-    const response = await admin.messaging().sendEach(messages);
+    const message = {
+      notification: { title, body },
+      tokens: tokenList,
+    };
+
+    const response = await admin.messaging().sendMulticast(message);
     console.log("📬 FCM Response:", response);
-    res.json({ message: 'Push sent to all devices.', response });
+
+    res.json({
+      message: 'Push sent to all devices.',
+      successCount: response.successCount,
+      failureCount: response.failureCount,
+    });
   } catch (err) {
     res.status(500).json({ message: 'Error sending push notifications.', error: err.message });
   }
 };
+

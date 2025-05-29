@@ -6,3 +6,9 @@
 
 # Ignore environment variables
 .env
+
+#scripts
+/scripts
+
+#data
+/data
