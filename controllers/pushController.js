@@ -50,12 +50,17 @@ exports.sendPushToAll = async (req, res) => {
       return res.status(400).json({ message: 'No tokens found.' });
     }
 
-    const message = {
-      notification: { title, body },
-      tokens: tokenList
-    };
+    // ✅ Create individual messages
+    const messages = tokenList.map(token => ({
+      token,
+      notification: {
+        title,
+        body
+      }
+    }));
+
+    // ✅ Send notifications
     const response = await admin.messaging().sendEach(messages);
-    //const response = await admin.messaging().sendMulticast(message);
 
     console.log("✅ Push sent. Success:", response.successCount, " Failures:", response.failureCount);
     res.json({
@@ -69,5 +74,6 @@ exports.sendPushToAll = async (req, res) => {
     res.status(500).json({ message: 'Push failed.', error: err.message });
   }
 };
+
 
 
