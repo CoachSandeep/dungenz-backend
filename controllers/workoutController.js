@@ -1,4 +1,5 @@
 const Workout = require('../models/Workout');
+const Settings = require('../models/settings');
 
 // Upload a Workout
 exports.uploadWorkout = async (req, res) => {
@@ -74,9 +75,24 @@ exports.listWorkoutsInRange = async (req, res) => {
     const toDate = new Date(to);
     toDate.setHours(23, 59, 59, 999); // include entire day
 
-    const workouts = await Workout.find({
+    let workouts = await Workout.find({
       date: { $gte: fromDate, $lte: toDate }
     }).populate('createdBy', 'name');
+
+    // ✅ Apply release time filter
+    const settings = await Settings.findOne();
+    const releaseTime = settings?.releaseTime || '05:00';
+
+    const now = new Date();
+    const todayKey = now.toISOString().split('T')[0];
+    const [hour, minute] = releaseTime.split(':');
+    const releaseDateTime = new Date(`${todayKey}T${hour}:${minute}:00`);
+
+    if (now < releaseDateTime) {
+      workouts = workouts.filter(
+        (w) => w.date.toISOString().split('T')[0] !== todayKey
+      );
+    }
 
     res.json(workouts);
   } catch (err) {
