@@ -64,42 +64,47 @@ exports.deleteWorkout = async (req, res) => {
 
 // List Workouts within a range
 exports.listWorkoutsInRange = async (req, res) => {
-  const { from, to } = req.query;
-
-  if (!from || !to) {
-    return res.status(400).json({ message: 'Both from and to dates are required.' });
-  }
-
   try {
-    const fromDate = new Date(from);
-    const toDate = new Date(to);
-    toDate.setHours(23, 59, 59, 999); // include entire day
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    const now = new Date();
-    const currentDate = new Date(now.toISOString().split("T")[0]);
-
-    // Fetch release time from settings (assuming you have a Settings model)
-  
-    const setting = await Setting.findOne();
-    const releaseTime = setting?.releaseTime || "21:00";
-    const [releaseHour, releaseMinute] = releaseTime.split(":".map(Number));
-
-    const releaseDateTime = new Date(currentDate);
+    // Step 1: Fetch release time from DB
+    const settings = await Settings.findOne({});
+    const releaseTime = settings?.releaseTime || "21:00"; // default fallback
+    const [releaseHour, releaseMinute] = releaseTime.split(":").map(Number);
+    const releaseDateTime = new Date(today);
     releaseDateTime.setHours(releaseHour, releaseMinute, 0, 0);
 
-    // Determine which dates to allow
-    const filter = {
-      date: {
-        $gte: fromDate,
-        $lte: new Date(currentDate.getTime() + (now >= releaseDateTime ? 86400000 : 0))
-      }
-    };
+    // Step 2: Calculate past 6 + today
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 6);
 
-    const workouts = await Workout.find(filter).populate('createdBy', 'name');
+    // Step 3: Check if tomorrow should be shown
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const now = new Date();
+    const datesToInclude = [today.toISOString().split("T")[0]];
+
+    for (let i = 1; i <= 6; i++) {
+      const past = new Date(today);
+      past.setDate(today.getDate() - i);
+      datesToInclude.push(past.toISOString().split("T")[0]);
+    }
+
+    if (now >= releaseDateTime) {
+      datesToInclude.push(tomorrow.toISOString().split("T")[0]);
+    }
+
+    // Step 4: Fetch only relevant workouts
+    const workouts = await Workout.find({
+      date: { $in: datesToInclude }
+    }).populate("createdBy", "name");
+
     res.json(workouts);
   } catch (err) {
-    console.error('❌ Error in range fetch:', err);
-    res.status(500).json({ message: 'Error fetching workouts in range' });
+    console.error("❌ Workout fetch error:", err);
+    res.status(500).json({ message: "Workout fetch failed" });
   }
 };
 
