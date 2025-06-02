@@ -69,21 +69,19 @@ exports.listWorkoutsInRange = async (req, res) => {
     today.setHours(0, 0, 0, 0);
 
     const now = new Date();
-    console.log("🕓 Current Time:", now.toLocaleString());
 
-    // Fetch release time
+    // 🔧 Fetch settings
     const settings = await Settings.findOne({});
-    console.log("⚙️ Settings fetched:", settings);
-
     if (!settings || !settings.releaseTime) {
-      return res.status(500).json({ message: "Release time not set in settings" });
+      return res.status(500).json({ message: "Release time not set" });
     }
 
     const [releaseHour, releaseMinute] = settings.releaseTime.split(":").map(Number);
     const releaseDateTime = new Date(today);
     releaseDateTime.setHours(releaseHour, releaseMinute, 0, 0);
 
-    console.log("🕘 Release DateTime:", releaseDateTime.toLocaleString());
+    console.log("🕘 Now:", now.toISOString());
+    console.log("🕘 ReleaseTime:", releaseDateTime.toISOString());
 
     const datesToInclude = [];
     for (let i = 6; i >= 0; i--) {
@@ -92,18 +90,20 @@ exports.listWorkoutsInRange = async (req, res) => {
       datesToInclude.push(date.toISOString().split("T")[0]);
     }
 
-    if (now >= releaseDateTime) {
+    // ✅ Fix: Include tomorrow if release time crossed
+    if (now.getTime() >= releaseDateTime.getTime()) {
       const tomorrow = new Date(today);
       tomorrow.setDate(today.getDate() + 1);
-      datesToInclude.push(tomorrow.toISOString().split("T")[0]);
+      const tomorrowKey = tomorrow.toISOString().split("T")[0];
+      datesToInclude.push(tomorrowKey);
+      console.log("✅ Tomorrow Included:", tomorrowKey);
     }
-
-    console.log("📅 Final dates to include:", datesToInclude);
 
     const workouts = await Workout.find({
       date: { $in: datesToInclude }
     }).populate("createdBy", "name");
 
+    console.log("📅 Final dates:", datesToInclude);
     res.json(workouts);
   } catch (err) {
     console.error("❌ Workout fetch error:", err);
