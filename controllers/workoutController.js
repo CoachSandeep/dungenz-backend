@@ -69,42 +69,53 @@ exports.listWorkoutsInRange = async (req, res) => {
     const today = new Date(now);
     today.setHours(0, 0, 0, 0);
 
-    // Fetch release time
+    const { from, to } = req.query;
+    const isSuperAdmin = req.user?.role === "superadmin"; // 👑 Optional role check
+
+    // Release Time Logic
     const settings = await Settings.findOne({});
     const releaseTime = settings?.releaseTime || "21:00";
     const [releaseHour, releaseMinute] = releaseTime.split(":").map(Number);
-
     const releaseDateTime = new Date(today);
     releaseDateTime.setHours(releaseHour, releaseMinute, 0, 0);
 
-    console.log("🕘 NOW:", now.toLocaleString("en-GB", { timeZone: "Asia/Kolkata" }));
-    console.log("🕘 RELEASE:", releaseDateTime.toLocaleString("en-GB", { timeZone: "Asia/Kolkata" }));
+    // Decide date range
+    let fromDate = from;
+    let toDate = to;
 
-    // Past 6 + today
-    const datesToInclude = [];
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      datesToInclude.push(date.toISOString().split("T")[0]);
+    if (!from || !to) {
+      // Default to last 6 days + today
+      const datesToInclude = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        datesToInclude.push(d.toISOString().split("T")[0]);
+      }
+
+      // Add tomorrow if release time has passed or user is superadmin
+      if (now >= releaseDateTime || isSuperAdmin) {
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        datesToInclude.push(tomorrow.toISOString().split("T")[0]);
+      }
+
+      console.log("📅 Default Mode Dates:", datesToInclude);
+      const workouts = await Workout.find({ date: { $in: datesToInclude } }).populate("createdBy", "name");
+      return res.json(workouts);
     }
 
-    // Add tomorrow if release time passed
-    if (now >= releaseDateTime) {
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-      datesToInclude.push(tomorrow.toISOString().split("T")[0]);
-      console.log("✅ Tomorrow included:", tomorrow.toISOString().split("T")[0]);
-    }
-
-    // Fetch
+    // For load more / future scrolls
+    console.log("📦 Fetching from:", fromDate, "to:", toDate);
     const workouts = await Workout.find({
-      date: { $in: datesToInclude }
+      date: {
+        $gte: fromDate,
+        $lte: toDate
+      }
     }).populate("createdBy", "name");
 
-    console.log("📅 Dates to send:", datesToInclude);
     res.json(workouts);
   } catch (err) {
-    console.error("❌ Error:", err);
+    console.error("❌ Error fetching workouts in range:", err);
     res.status(500).json({ message: "Workout fetch failed" });
   }
 };
