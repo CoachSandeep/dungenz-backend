@@ -70,47 +70,71 @@ exports.listWorkoutsInRange = async (req, res) => {
     today.setHours(0, 0, 0, 0);
 
     const { from, to } = req.query;
-    const isSuperAdmin = req.user?.role === "superadmin"; // 👑 Optional role check
+    const isSuperAdmin = req.user?.role === "superadmin";
 
-    // Release Time Logic
+    // Get release time
     const settings = await Settings.findOne({});
     const releaseTime = settings?.releaseTime || "21:00";
     const [releaseHour, releaseMinute] = releaseTime.split(":").map(Number);
     const releaseDateTime = new Date(today);
     releaseDateTime.setHours(releaseHour, releaseMinute, 0, 0);
 
-    // Decide date range
-    let fromDate = from;
-    let toDate = to;
-
+    // 🎯 Default case: no from/to provided → last 6 + today + tomorrow (if passed)
     if (!from || !to) {
-      // Default to last 6 days + today
       const datesToInclude = [];
       for (let i = 6; i >= 0; i--) {
         const d = new Date(today);
-        d.setDate(d.getDate() - i);
+        d.setDate(today.getDate() - i);
         datesToInclude.push(d.toISOString().split("T")[0]);
       }
 
-      // Add tomorrow if release time has passed or user is superadmin
       if (now >= releaseDateTime || isSuperAdmin) {
         const tomorrow = new Date(today);
         tomorrow.setDate(today.getDate() + 1);
         datesToInclude.push(tomorrow.toISOString().split("T")[0]);
       }
 
-      console.log("📅 Default Mode Dates:", datesToInclude);
       const workouts = await Workout.find({ date: { $in: datesToInclude } }).populate("createdBy", "name");
       return res.json(workouts);
     }
 
-    // For load more / future scrolls
-    console.log("📦 Fetching from:", fromDate, "to:", toDate);
-    const workouts = await Workout.find({
-      date: {
-        $gte: fromDate,
-        $lte: toDate
+    // 👇 If custom range is requested (scroll/load more)
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    toDate.setHours(23, 59, 59, 999);
+
+    // Superadmin → show full range
+    if (isSuperAdmin) {
+      const workouts = await Workout.find({
+        date: { $gte: fromDate, $lte: toDate }
+      }).populate("createdBy", "name");
+      return res.json(workouts);
+    }
+
+    // Member → allow up to today (+ tomorrow if released), but nothing beyond
+    const allowedDates = [];
+
+    for (let d = new Date(fromDate); d <= toDate; d.setDate(d.getDate() + 1)) {
+      const dateKey = d.toISOString().split("T")[0];
+      const dClone = new Date(d);
+      dClone.setHours(0, 0, 0, 0);
+
+      // Include date if: it's before today OR it's today OR it's tomorrow after releaseTime
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+
+      if (dClone < today) {
+        allowedDates.push(dateKey);
+      } else if (dClone.getTime() === today.getTime()) {
+        allowedDates.push(dateKey);
+      } else if (dClone.getTime() === tomorrow.getTime() && now >= releaseDateTime) {
+        allowedDates.push(dateKey);
       }
+    }
+
+    const workouts = await Workout.find({
+      date: { $in: allowedDates }
     }).populate("createdBy", "name");
 
     res.json(workouts);
