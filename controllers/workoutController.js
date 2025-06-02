@@ -68,17 +68,23 @@ exports.listWorkoutsInRange = async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Step 1: Fetch release time from DB
+    const now = new Date();
+    console.log("🕓 Current Time:", now.toLocaleString());
+
+    // Fetch release time
     const settings = await Settings.findOne({});
+    console.log("⚙️ Settings fetched:", settings);
+
     if (!settings || !settings.releaseTime) {
-      return res.status(500).json({ message: "Release time is not configured in settings" });
+      return res.status(500).json({ message: "Release time not set in settings" });
     }
 
     const [releaseHour, releaseMinute] = settings.releaseTime.split(":").map(Number);
     const releaseDateTime = new Date(today);
     releaseDateTime.setHours(releaseHour, releaseMinute, 0, 0);
 
-    // Step 2: Calculate dates to include: past 6 days + today
+    console.log("🕘 Release DateTime:", releaseDateTime.toLocaleString());
+
     const datesToInclude = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
@@ -86,15 +92,14 @@ exports.listWorkoutsInRange = async (req, res) => {
       datesToInclude.push(date.toISOString().split("T")[0]);
     }
 
-    // Step 3: Add tomorrow if release time is passed
-    const now = new Date();
     if (now >= releaseDateTime) {
       const tomorrow = new Date(today);
       tomorrow.setDate(today.getDate() + 1);
       datesToInclude.push(tomorrow.toISOString().split("T")[0]);
     }
 
-    // Step 4: Fetch workouts only for these dates
+    console.log("📅 Final dates to include:", datesToInclude);
+
     const workouts = await Workout.find({
       date: { $in: datesToInclude }
     }).populate("createdBy", "name");
