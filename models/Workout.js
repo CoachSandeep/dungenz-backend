@@ -30,6 +30,13 @@ const workoutSchema = new mongoose.Schema({
     ref: 'Workout',
     default: null,
   },
+  // New fields
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  comments: [{
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    text: String,
+    timestamp: { type: Date, default: Date.now }
+  }],
  version: { type: String, enum: ['Ultra Train', 'Super Train', 'Minimal Equipment', 'Beginner'], required: true },
  
 }, { timestamps: true });
