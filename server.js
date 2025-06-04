@@ -12,6 +12,7 @@ const userRoutes = require('./routes/UserRoutes');
 const authRoutes = require('./routes/authRoutes');
 const workoutRoutes = require('./routes/workoutRoutes');
 const likeCommentRoutes = require('./routes/likeCommentRoutes');
+const commentRoutes = require('./routes/comments');
 
 dotenv.config();
 const app = express();
@@ -43,6 +44,7 @@ app.use('/api/workouts', workoutRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/settings', settings);
 app.use('/api/workouts', likeCommentRoutes);
+app.use('/api/comments', commentRoutes);
 
 app.get('/', (req, res) => {
   res.send('Welcome to DUNGENZ API 🚀');
