@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const CommentDay = require('../models/CommentDay');
-const commentController = require('../controllers/commentController');
+
 
 // Get all comments for a date
 router.get('/:date', async (req, res) => {
