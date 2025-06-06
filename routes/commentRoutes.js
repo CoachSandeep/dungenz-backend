@@ -30,6 +30,8 @@ router.patch('/:date/:commentId/like', async (req, res) => {
   const { userId } = req.body;
   const { date, commentId } = req.params;
 
+  console.log("🧠 PATCH LIKE →", { date, commentId, userId });
+
   await CommentDay.updateOne(
     { date, "comments._id": commentId },
     { $addToSet: { "comments.$.likes": userId } }
