@@ -15,7 +15,7 @@ exports.register = async (req, res) => {
 
 
 // ✅ Send notification after user is created
-// await sendWelcomeNotification(newUser);
+await sendWelcomeNotification(newUser);
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
