@@ -55,7 +55,7 @@ router.post('/:id/copy', authenticate, checkRole('superadmin'), async (req, res)
       isNew: true,
       copiedFrom: original._id,
       createdBy: req.user._id,
-      title: `${original.title} (Copy)`
+      title: `${original.title}`
     });
 
     await copied.save();

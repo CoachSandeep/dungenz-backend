@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { sendWelcomeNotification } = require('../utils/notifications'); // update path as needed
 
 // Register User
 exports.register = async (req, res) => {
@@ -11,6 +12,11 @@ exports.register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await User.create({ name, email, password: hashedPassword, role });
+
+
+// ✅ Send notification after user is created
+await sendWelcomeNotification(newUser);
+
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
     res.status(500).json({ message: err.message });
