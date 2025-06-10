@@ -1,5 +1,5 @@
 const express = require('express');
-const { uploadWorkout, listWorkouts, deleteWorkout, listWorkoutsInRange  } = require('../controllers/workoutController');
+const { uploadWorkout, listWorkouts, deleteWorkout, listWorkoutsInRange, getWorkoutsByMonth  } = require('../controllers/workoutController');
 const authMiddleware = require('../middleware/authMiddleware');
 const checkRole = require('../middleware/checkRole');
 const router = express.Router();
