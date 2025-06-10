@@ -163,5 +163,28 @@ router.post('/cluster-copy', authenticate, checkRole('superadmin'), async (req, 
   }
 });
 
+// ✅ Get workouts by month
+router.get('/month', authenticate, checkRole('superadmin'), async (req, res) => {
+  try {
+    const { year, month } = req.query;
+    if (!year || !month) {
+      return res.status(400).json({ message: 'Year and month are required' });
+    }
+
+    const fromDate = new Date(`${year}-${month}-01`);
+    const toDate = new Date(fromDate);
+    toDate.setMonth(fromDate.getMonth() + 1);
+
+    const workouts = await Workout.find({
+      date: { $gte: fromDate, $lt: toDate }
+    }).sort({ date: 1 });
+
+    res.json(workouts);
+  } catch (err) {
+    console.error("❌ Monthly fetch failed:", err);
+    res.status(500).json({ message: 'Error fetching monthly workouts', error: err.message });
+  }
+});
+
 
 module.exports = router;
