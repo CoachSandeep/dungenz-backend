@@ -10,6 +10,7 @@ router.post('/upload', authMiddleware, checkRole('superadmin'), uploadWorkout);
 router.get('/', authMiddleware, listWorkouts);
 router.delete('/:id', authMiddleware, checkRole('superadmin'), deleteWorkout);
 router.get('/range', authMiddleware, listWorkoutsInRange);
+router.get('/month', authMiddleware, getWorkoutsByMonth);
 
 
 module.exports = router;

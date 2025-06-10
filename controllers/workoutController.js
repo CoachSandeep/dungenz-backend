@@ -144,4 +144,30 @@ exports.listWorkoutsInRange = async (req, res) => {
   }
 };
 
+exports.getWorkoutsByMonth = async (req, res) => {
+  const { year, month } = req.query;
+  if (!year || !month) {
+    return res.status(400).json({ message: "Year and month are required." });
+  }
+
+  const startDate = new Date(`${year}-${month}-01`);
+  const endDate = new Date(startDate);
+  endDate.setMonth(endDate.getMonth() + 1); // first day of next month
+
+  try {
+    const workouts = await Workout.find({
+      date: {
+        $gte: startDate,
+        $lt: endDate
+      }
+    }).sort({ date: 1 });
+
+    res.json(workouts);
+  } catch (err) {
+    console.error("❌ Monthly workout fetch failed:", err);
+    res.status(500).json({ message: "Failed to fetch workouts", error: err.message });
+  }
+};
+
+
 
