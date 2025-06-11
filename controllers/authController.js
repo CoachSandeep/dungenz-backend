@@ -5,11 +5,13 @@ const { sendWelcomeNotification } = require('../utils/notifications');
 
 // Utility to generate tokens
 const generateAccessToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '15m' }); // short expiry
+  // Increased from 15m to 2h
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '2h' });
 };
 
 const generateRefreshToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  // Increased from 7d to 30d
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
 // Register
@@ -22,7 +24,7 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await User.create({ name, email, password: hashedPassword, role });
 
-    //await sendWelcomeNotification(newUser);
+    // await sendWelcomeNotification(newUser);
 
     const accessToken = generateAccessToken(newUser._id);
     const refreshToken = generateRefreshToken(newUser._id);
@@ -31,7 +33,7 @@ exports.register = async (req, res) => {
       httpOnly: true,
       secure: true,
       sameSite: 'Strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
     res.status(201).json({
@@ -61,7 +63,7 @@ exports.login = async (req, res) => {
       httpOnly: true,
       secure: true,
       sameSite: 'Strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
     res.json({
