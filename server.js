@@ -13,6 +13,7 @@ const authRoutes = require('./routes/authRoutes');
 const workoutRoutes = require('./routes/workoutRoutes');
 // const likeCommentRoutes = require('./routes/likeCommentRoutes');
 const commentRoutes = require('./routes/commentRoutes');
+const cookieParser = require('cookie-parser');
 
 dotenv.config();
 const app = express();
@@ -32,6 +33,8 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.use(express.json());
+
+app.use(cookieParser());
 
 // ✅ Static folder to serve profile images
 app.use('/uploads', express.static(uploadDir));

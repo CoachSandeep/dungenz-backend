@@ -1,11 +1,20 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { sendWelcomeNotification } = require('../utils/notifications'); // update path as needed
+const { sendWelcomeNotification } = require('../utils/notifications');
 
-// Register User
+// Utility to generate tokens
+const generateAccessToken = (userId) => {
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '15m' }); // short expiry
+};
+
+const generateRefreshToken = (userId) => {
+  return jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+};
+
+// Register
 exports.register = async (req, res) => {
-  const { name, email, password, role = 'member' } = req.body; // ✅ default role added
+  const { name, email, password, role = 'member' } = req.body;
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: 'User already exists' });
@@ -13,17 +22,29 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await User.create({ name, email, password: hashedPassword, role });
 
+    await sendWelcomeNotification(newUser);
 
-// ✅ Send notification after user is created
-await sendWelcomeNotification(newUser);
+    const accessToken = generateAccessToken(newUser._id);
+    const refreshToken = generateRefreshToken(newUser._id);
 
-    res.status(201).json({ message: 'User registered successfully' });
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.status(201).json({
+      message: 'User registered successfully',
+      token: accessToken,
+      user: { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role }
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// Login User
+// Login
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -33,16 +54,34 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid Credentials' });
 
-   const token = jwt.sign(
-  { id: user._id },
-  process.env.JWT_SECRET, // ✅ This line must use env
-  { expiresIn: '1d' });
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
-  console.log("🪙 Issued token:", token);
-console.log("🔐 Secret used:", process.env.JWT_SECRET); // this MUST match Render value
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
 
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+    res.json({
+      token: accessToken,
+      user: { id: user._id, name: user.name, email: user.email, role: user.role }
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+};
+
+// Refresh Route
+exports.refreshToken = (req, res) => {
+  const token = req.cookies.refreshToken;
+  if (!token) return res.status(401).json({ message: 'No refresh token' });
+
+  jwt.verify(token, process.env.JWT_REFRESH_SECRET, (err, decoded) => {
+    if (err) return res.status(403).json({ message: 'Invalid refresh token' });
+
+    const newAccessToken = generateAccessToken(decoded.id);
+    res.json({ token: newAccessToken });
+  });
 };
