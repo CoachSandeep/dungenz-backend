@@ -4,6 +4,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const userController = require('../controllers/UserController');
 const multer = require('multer');
 
+
 // Image upload setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),

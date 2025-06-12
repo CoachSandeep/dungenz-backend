@@ -17,6 +17,7 @@ exports.updateProfile = async (req, res) => {
 
     // ✅ Fix the key to match frontend
     if (req.file) {
+      console.log('📸 File saved at:', req.file.path);  // ✅ Add this
       updateData.photo = `/uploads/${req.file.filename}`;
     }
 
