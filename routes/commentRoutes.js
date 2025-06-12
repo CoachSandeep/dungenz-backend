@@ -52,4 +52,23 @@ router.post('/:date/:commentId/reply', async (req, res) => {
   res.json({ replied: true });
 });
 
+// Delete a comment by its ID from a specific date
+router.delete('/:date/:commentId', async (req, res) => {
+  const { date, commentId } = req.params;
+
+  try {
+    const doc = await CommentDay.findOne({ date });
+    if (!doc) return res.status(404).json({ message: 'CommentDay not found' });
+
+    const updatedComments = doc.comments.filter(c => c._id.toString() !== commentId);
+    doc.comments = updatedComments;
+    await doc.save();
+
+    res.json({ message: 'Comment deleted successfully' });
+  } catch (err) {
+    console.error("❌ Error deleting comment:", err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;
