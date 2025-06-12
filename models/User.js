@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
   bio: { type: String, default: '' },
   gender: { type: String },
   age: { type: Number },
-  profileImage: { type: String, default: '' }
+  profileImage: String,
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

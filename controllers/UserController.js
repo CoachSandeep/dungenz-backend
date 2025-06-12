@@ -13,14 +13,18 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const updateData = req.body;
+    const updateData = {
+      name: req.body.name,
+      bio: req.body.bio
+    };
 
-    // ✅ Fix the key to match frontend
+    // ✅ If file is uploaded, add profileImage path
     if (req.file) {
-      console.log('📸 File saved at:', req.file.path);  // ✅ Add this
-      updateData.photo = `/uploads/${req.file.filename}`;
+      updateData.profileImage = `/uploads/${req.file.filename}`;
+      console.log("📸 Image Path Set:", updateData.profileImage);
     }
 
+    // ✅ Perform update
     const updated = await User.findByIdAndUpdate(req.user.id, updateData, { new: true });
     res.json(updated);
   } catch (err) {
