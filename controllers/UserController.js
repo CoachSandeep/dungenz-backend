@@ -15,9 +15,9 @@ exports.updateProfile = async (req, res) => {
   try {
     const updateData = req.body;
 
-    // Handle image upload if exists
+    // ✅ Fix the key to match frontend
     if (req.file) {
-      updateData.profileImage = `/uploads/${req.file.filename}`;
+      updateData.photo = `/uploads/${req.file.filename}`;
     }
 
     const updated = await User.findByIdAndUpdate(req.user.id, updateData, { new: true });
