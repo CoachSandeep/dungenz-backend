@@ -4,9 +4,8 @@ const User = require('../models/User');
 const { sendWelcomeNotification } = require('../utils/notifications');
 
 // Utility to generate tokens
-const generateAccessToken = (userId) => {
-  // Increased from 15m to 2h
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '2h' });
+const generateAccessToken = (userId, role) => {
+  return jwt.sign({ id: userId, role }, process.env.JWT_SECRET, { expiresIn: '2h' });
 };
 
 const generateRefreshToken = (userId) => {
@@ -26,7 +25,7 @@ exports.register = async (req, res) => {
 
     // await sendWelcomeNotification(newUser);
 
-    const accessToken = generateAccessToken(newUser._id);
+    const accessToken = generateAccessToken(user._id, user.role);
     const refreshToken = generateRefreshToken(newUser._id);
 
     res.cookie('refreshToken', refreshToken, {
@@ -56,7 +55,7 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid Credentials' });
 
-    const accessToken = generateAccessToken(user._id);
+    const accessToken = generateAccessToken(user._id, user.role);
     const refreshToken = generateRefreshToken(user._id);
 
     res.cookie('refreshToken', refreshToken, {
