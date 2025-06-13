@@ -3,7 +3,7 @@ const Settings = require('../models/settings');
 
 // Upload a Workout
 exports.uploadWorkout = async (req, res) => {
-  const { title, description, date, version, capTime, instructions, customName, icon, targetUser } = req.body;
+  const { title, description, date, version, capTime, instructions, customName, icon, targetUser  } = req.body;
   try {
     const newWorkout = await Workout.create({
       title,
@@ -73,79 +73,72 @@ exports.listWorkoutsInRange = async (req, res) => {
     const { from, to } = req.query;
     const isSuperAdmin = req.user?.role === "superadmin";
 
+    // Get release time
     const settings = await Settings.findOne({});
     const releaseTime = settings?.releaseTime || "21:00";
-    const [releaseHour, releaseMinute] = releaseTime.split(":" ).map(Number);
+    const [releaseHour, releaseMinute] = releaseTime.split(":").map(Number);
     const releaseDateTime = new Date(today);
     releaseDateTime.setHours(releaseHour, releaseMinute, 0, 0);
 
-    const allowedDates = [];
-
+    // 🎯 Default case: no from/to provided → last 6 + today + tomorrow (if passed)
     if (!from || !to) {
+      const datesToInclude = [];
       for (let i = 6; i >= 0; i--) {
         const d = new Date(today);
         d.setDate(today.getDate() - i);
-        allowedDates.push(d.toISOString().split("T")[0]);
+        datesToInclude.push(d.toISOString().split("T")[0]);
       }
 
       if (now >= releaseDateTime || isSuperAdmin) {
         const tomorrow = new Date(today);
         tomorrow.setDate(today.getDate() + 1);
-        allowedDates.push(tomorrow.toISOString().split("T")[0]);
+        datesToInclude.push(tomorrow.toISOString().split("T")[0]);
       }
-    } else {
-      const fromDate = new Date(from);
-      const toDate = new Date(to);
-      toDate.setHours(23, 59, 59, 999);
 
-      for (let d = new Date(fromDate); d <= toDate; d.setDate(d.getDate() + 1)) {
-        const dateKey = d.toISOString().split("T")[0];
-        const dClone = new Date(d);
-        dClone.setHours(0, 0, 0, 0);
+      const workouts = await Workout.find({ date: { $in: datesToInclude } }).populate("createdBy", "name");
+      return res.json(workouts);
+    }
 
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
+    // 👇 If custom range is requested (scroll/load more)
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    toDate.setHours(23, 59, 59, 999);
 
-        if (dClone < today) {
-          allowedDates.push(dateKey);
-        } else if (dClone.getTime() === today.getTime()) {
-          allowedDates.push(dateKey);
-        } else if (dClone.getTime() === tomorrow.getTime() && now >= releaseDateTime) {
-          allowedDates.push(dateKey);
-        }
+    // Superadmin → show full range
+    if (isSuperAdmin) {
+      const workouts = await Workout.find({
+        date: { $gte: fromDate, $lte: toDate }
+      }).populate("createdBy", "name");
+      return res.json(workouts);
+    }
+
+    // Member → allow up to today (+ tomorrow if released), but nothing beyond
+    const allowedDates = [];
+
+    for (let d = new Date(fromDate); d <= toDate; d.setDate(d.getDate() + 1)) {
+      const dateKey = d.toISOString().split("T")[0];
+      const dClone = new Date(d);
+      dClone.setHours(0, 0, 0, 0);
+
+      // Include date if: it's before today OR it's today OR it's tomorrow after releaseTime
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+
+      if (dClone < today) {
+        allowedDates.push(dateKey);
+      } else if (dClone.getTime() === today.getTime()) {
+        allowedDates.push(dateKey);
+      } else if (dClone.getTime() === tomorrow.getTime() && now >= releaseDateTime) {
+        allowedDates.push(dateKey);
       }
     }
 
-    const allWorkouts = await Workout.find({
-      date: { $in: allowedDates },
-      $or: [
-        { targetUser: null },
-        { targetUser: req.user._id }
-      ]
+    const workouts = await Workout.find({
+      date: { $in: allowedDates }
     }).populate("createdBy", "name");
 
-    const grouped = {};
-    for (const w of allWorkouts) {
-      const key = w.date.toISOString().split('T')[0];
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(w);
-    }
-
-    const finalWorkouts = [];
-    for (const date in grouped) {
-      const dayWorkouts = grouped[date];
-      const personalized = dayWorkouts.filter(w => w.targetUser?.toString() === req.user._id.toString());
-
-      if (personalized.length > 0) {
-        finalWorkouts.push(...personalized);
-      } else {
-        const daily = dayWorkouts.filter(w => !w.targetUser);
-        finalWorkouts.push(...daily);
-      }
-    }
-
-    res.json(finalWorkouts);
+    res.json(workouts);
   } catch (err) {
     console.error("❌ Error fetching workouts in range:", err);
     res.status(500).json({ message: "Workout fetch failed" });
@@ -160,7 +153,7 @@ exports.getWorkoutsByMonth = async (req, res) => {
 
   const startDate = new Date(`${year}-${month}-01`);
   const endDate = new Date(startDate);
-  endDate.setMonth(endDate.getMonth() + 1);
+  endDate.setMonth(endDate.getMonth() + 1); // first day of next month
 
   try {
     const workouts = await Workout.find({
@@ -176,3 +169,6 @@ exports.getWorkoutsByMonth = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch workouts", error: err.message });
   }
 };
+
+
+
