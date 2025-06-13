@@ -38,7 +38,11 @@ const workoutSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now }
   }],
  version: { type: String, enum: ['Ultra Train', 'Super Train', 'Minimal Equipment', 'Beginner'], required: true },
- 
+ targetUser: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'User',
+  default: null // null = daily programming
+},
 }, { timestamps: true });
 
 module.exports = mongoose.model('Workout', workoutSchema);
