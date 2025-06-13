@@ -21,5 +21,7 @@ const upload = multer({ storage });
 
 router.get('/me', authMiddleware, userController.getProfile);
 router.put('/me', authMiddleware, upload.single('profileImage'), userController.updateProfile);
+// Add this to routes/user.js
+router.get('/', authMiddleware, userController.listUsers);
 
 module.exports = router;

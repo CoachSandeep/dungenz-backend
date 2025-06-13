@@ -31,3 +31,15 @@ exports.updateProfile = async (req, res) => {
     res.status(500).json({ message: 'Error updating profile', error: err.message });
   }
 };
+
+exports.listUsers = async (req, res) => {
+  try {
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    const users = await User.find({}, '_id name email');
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching users', error: err.message });
+  }
+};
