@@ -111,7 +111,7 @@ exports.listWorkoutsInRange = async (req, res) => {
           allowedDates.push(dateKey);
         } else if (dClone.getTime() === today.getTime()) {
           allowedDates.push(dateKey);
-        } else if (dClone.getTime() === tomorrow.getTime() && now >= releaseDateTime) {
+        } else if (dClone.getTime() === tomorrow.getTime() && (now >= releaseDateTime || isSuperAdmin)) {
           allowedDates.push(dateKey);
         }
       }
