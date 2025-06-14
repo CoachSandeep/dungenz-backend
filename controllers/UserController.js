@@ -43,3 +43,59 @@ exports.listUsers = async (req, res) => {
     res.status(500).json({ message: 'Error fetching users', error: err.message });
   }
 };
+
+
+// Change role of a user
+exports.updateUserRole = async (req, res) => {
+  try {
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    const { id } = req.params;
+    const { role } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(id, { role }, { new: true });
+    if (!updatedUser) return res.status(404).json({ message: 'User not found' });
+
+    res.json({ message: 'Role updated', user: updatedUser });
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating role', error: err.message });
+  }
+};
+
+// Toggle user active/inactive
+exports.toggleUserActive = async (req, res) => {
+  try {
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.isActive = !user.isActive;
+    await user.save();
+
+    res.json({ message: `User is now ${user.isActive ? 'active' : 'inactive'}`, user });
+  } catch (err) {
+    res.status(500).json({ message: 'Error toggling user', error: err.message });
+  }
+};
+
+// Delete user
+exports.deleteUser = async (req, res) => {
+  try {
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const { id } = req.params;
+    const deleted = await User.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ message: 'User not found' });
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error deleting user', error: err.message });
+  }
+};

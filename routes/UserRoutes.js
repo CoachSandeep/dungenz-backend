@@ -21,7 +21,11 @@ const upload = multer({ storage });
 
 router.get('/me', authMiddleware, userController.getProfile);
 router.put('/me', authMiddleware, upload.single('profileImage'), userController.updateProfile);
-// Add this to routes/user.js
+
+// ✅ Admin-only routes
 router.get('/', authMiddleware, userController.listUsers);
+router.patch('/:id/role', authMiddleware, userController.updateUserRole);
+router.patch('/:id/toggle-active', authMiddleware, userController.toggleUserActive);
+router.delete('/:id', authMiddleware, userController.deleteUser);
 
 module.exports = router;
