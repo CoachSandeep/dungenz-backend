@@ -186,5 +186,49 @@ router.get('/month', authenticate, checkRole('superadmin'), async (req, res) => 
   }
 });
 
+router.post('/copy-day', authenticate, checkRole('superadmin'), async (req, res) => {
+  try {
+    const { fromDate, fromVersion, toDate, toVersion, user } = req.body;
+
+    if (!fromDate || !toDate || !fromVersion || !toVersion) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    const startDate = new Date(fromDate);
+    const endDate = new Date(startDate.getTime() + 86400000);
+
+    const originalWorkouts = await Workout.find({
+      version: fromVersion,
+      date: { $gte: startDate, $lt: endDate },
+    });
+
+    const copies = [];
+
+    for (let workout of originalWorkouts) {
+      const newWorkout = new Workout({
+        title: workout.title,
+        description: workout.description,
+        instruction: workout.instruction,
+        capTime: workout.capTime,
+        customName: workout.customName,
+        icon: workout.icon,
+        order: workout.order,
+        version: toVersion,
+        date: new Date(toDate),
+        createdBy: req.user._id,
+        copiedFrom: workout._id,
+        assignedToUser: user === 'all' ? null : user
+      });
+
+      await newWorkout.save();
+      copies.push(newWorkout);
+    }
+
+    res.json({ message: '✅ Workouts copied successfully', copies });
+  } catch (err) {
+    console.error('❌ Error copying workouts:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
 
 module.exports = router;
