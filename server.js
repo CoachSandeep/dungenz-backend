@@ -48,7 +48,6 @@ app.use('/api/push', pushRoutes);
 app.use('/api/settings', settings);
 // app.use('/api/workouts', likeCommentRoutes);
 app.use('/api/comments', commentRoutes);
-app.use('/api/admin/workouts', require('./routes/adminWorkoutRoutes'));
 
 app.get('/', (req, res) => {
   res.send('Welcome to DUNGENZ API 🚀');
