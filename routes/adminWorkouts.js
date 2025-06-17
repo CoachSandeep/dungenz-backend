@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose'); // ✅ ADD THIS LINE
 const router = express.Router();
 const Workout = require('../models/Workout');
+const DailyMeta = require('../models/DailyMeta');
 const authenticate = require('../middleware/authMiddleware');
 const checkRole = require('../middleware/checkRole');
 
@@ -230,5 +231,60 @@ router.post('/copy-day', authenticate, checkRole('superadmin'), async (req, res)
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
+
+// 🟢 Save or Update calories for a date
+router.post('/daily-meta', authenticate, checkRole('superadmin'), async (req, res) => {
+  const { date, calories } = req.body;
+
+  if (!date || typeof calories !== 'number') {
+    return res.status(400).json({ message: 'Date and calories are required' });
+  }
+
+  try {
+    const existing = await DailyMeta.findOne({ date: new Date(date) });
+
+    if (existing) {
+      existing.calories = calories;
+      await existing.save();
+      return res.json({ message: 'Calories updated', meta: existing });
+    } else {
+      const meta = new DailyMeta({
+        date: new Date(date),
+        calories,
+        createdBy: req.user._id,
+      });
+      await meta.save();
+      res.json({ message: 'Calories saved', meta });
+    }
+  } catch (err) {
+    console.error('🔥 Error saving calories:', err);
+    res.status(500).json({ message: 'Failed to save calories' });
+  }
+});
+
+// 🔵 Fetch calories for a month
+router.get('/daily-meta/month', authenticate, checkRole('superadmin'), async (req, res) => {
+  const { year, month } = req.query;
+
+  if (!year || !month) {
+    return res.status(400).json({ message: 'Year and month are required' });
+  }
+
+  const fromDate = new Date(`${year}-${month}-01`);
+  const toDate = new Date(fromDate);
+  toDate.setMonth(toDate.getMonth() + 1);
+
+  try {
+    const meta = await DailyMeta.find({
+      date: { $gte: fromDate, $lt: toDate },
+    });
+
+    res.json(meta);
+  } catch (err) {
+    console.error('🔥 Error fetching meta:', err);
+    res.status(500).json({ message: 'Failed to fetch daily meta' });
+  }
+});
+
 
 module.exports = router;
