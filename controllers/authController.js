@@ -25,8 +25,8 @@ exports.register = async (req, res) => {
 
     // await sendWelcomeNotification(newUser);
 
-    const accessToken = generateAccessToken(user._id, user.role);
-    const refreshToken = generateRefreshToken(newUser._id);
+    const accessToken = generateAccessToken(newUser._id, newUser.role); // ✅ fixed
+    const refreshToken = generateRefreshToken(newUser._id); // ✅ fixed;
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
