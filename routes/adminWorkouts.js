@@ -286,5 +286,20 @@ router.get('/daily-meta/month', authenticate, checkRole('superadmin'), async (re
   }
 });
 
+router.delete('/daily-meta', authenticate, checkRole('superadmin'), async (req, res) => {
+  const { date } = req.query;
+  if (!date) return res.status(400).json({ message: "Date is required" });
+
+  try {
+    const result = await DailyMeta.deleteOne({ date });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "No entry found to delete" });
+    }
+    res.json({ message: "Calories deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while deleting calories" });
+  }
+});
 
 module.exports = router;
