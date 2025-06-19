@@ -2,21 +2,20 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const userController = require('../controllers/UserController');
+
 const multer = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../utils/cloudinary');
 
-// ✅ Image upload setup with safe filename
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => {
-    const safeName = file.originalname
-      .toLowerCase()
-      .replace(/\s+/g, '-') // Replace spaces with dashes
-      .replace(/[^a-z0-9.\-_]/g, ''); // Remove special characters except dot, dash, underscore
-
-    cb(null, Date.now() + '-' + safeName);
-  }
+// ✅ Cloudinary Multer Setup
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'dungenz_profiles', // You can change folder name
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+    transformation: [{ width: 500, height: 500, crop: 'limit' }] // Optional resizing
+  },
 });
-
 const upload = multer({ storage });
 
 router.get('/me', authMiddleware, userController.getProfile);

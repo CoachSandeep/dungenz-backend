@@ -13,22 +13,23 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
+    const user = req.user;
+
     const updateData = {
       name: req.body.name,
       bio: req.body.bio
     };
 
-    // ✅ If file is uploaded, add profileImage path
-    if (req.file) {
-      updateData.profileImage = `/uploads/${req.file.filename}`;
-      console.log("📸 Image Path Set:", updateData.profileImage);
+    // ✅ Add Cloudinary image URL if uploaded
+    if (req.file && req.file.path) {
+      updateData.photo = req.file.path; // Cloudinary URL
     }
 
-    // ✅ Perform update
-    const updated = await User.findByIdAndUpdate(req.user.id, updateData, { new: true });
-    res.json(updated);
+    const updated = await User.findByIdAndUpdate(user._id, updateData, { new: true });
+    res.json({ message: 'Profile updated', user: updated });
   } catch (err) {
-    res.status(500).json({ message: 'Error updating profile', error: err.message });
+    console.error('🔥 Profile update error:', err);
+    res.status(500).json({ message: 'Failed to update profile' });
   }
 };
 
