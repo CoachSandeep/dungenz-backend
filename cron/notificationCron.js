@@ -3,7 +3,7 @@ const admin = require('firebase-admin');
 const PushToken = require('../models/PushToken');
 
 // Schedule job at 9 PM IST (UTC +5:30)
-cron.schedule('30 15 * * *', async () => {
+cron.schedule('35 15 * * *', async () => {
   console.log('🕘 Sending daily workout notification at 9PM IST...');
 
   try {
