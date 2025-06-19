@@ -43,8 +43,11 @@ exports.sendPushToAll = async (req, res) => {
   }
 
   try {
-    const tokens = await PushToken.find().select('token -_id');
-    const tokenList = tokens.map(t => t.token).filter(Boolean);
+    // const tokens = await PushToken.find().select('token -_id');
+    // const tokenList = tokens.map(t => t.token).filter(Boolean);
+
+    const rawTokens = await PushToken.find().select('token -_id');
+const tokenList = [...new Set(rawTokens.map(t => t.token).filter(Boolean))];
 
     if (tokenList.length === 0) {
       return res.status(400).json({ message: 'No tokens found.' });
