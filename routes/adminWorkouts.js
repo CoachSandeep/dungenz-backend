@@ -266,7 +266,7 @@ router.post('/daily-meta', authenticate, checkRole('superadmin'), async (req, re
 
 
 // 🔵 Fetch calories for a month
-router.get('/daily-meta/month', authenticate, checkRole('superadmin'), async (req, res) => {
+router.get('/daily-meta/month', async (req, res) => {
   const { year, month } = req.query;
 
   if (!year || !month) {
