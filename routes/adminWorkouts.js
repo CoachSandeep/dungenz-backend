@@ -236,12 +236,14 @@ router.post('/copy-day', authenticate, checkRole('superadmin'), async (req, res)
 router.post('/daily-meta', authenticate, checkRole('superadmin'), async (req, res) => {
   const { date, calories } = req.body;
 
-  if (!date || typeof calories !== 'number') {
-    return res.status(400).json({ message: 'Date and calories are required' });
+  if (!date || typeof calories !== 'string' || !calories.trim()) {
+    return res.status(400).json({ message: 'Date and calorie range (e.g. "300-350") are required' });
   }
 
   try {
-    const existing = await DailyMeta.findOne({ date: new Date(date) });
+    const formattedDate = new Date(date).toISOString().split('T')[0];
+
+    let existing = await DailyMeta.findOne({ date: formattedDate });
 
     if (existing) {
       existing.calories = calories;
@@ -249,7 +251,7 @@ router.post('/daily-meta', authenticate, checkRole('superadmin'), async (req, re
       return res.json({ message: 'Calories updated', meta: existing });
     } else {
       const meta = new DailyMeta({
-        date: new Date(date),
+        date: formattedDate,
         calories,
         createdBy: req.user._id,
       });
@@ -261,6 +263,7 @@ router.post('/daily-meta', authenticate, checkRole('superadmin'), async (req, re
     res.status(500).json({ message: 'Failed to save calories' });
   }
 });
+
 
 // 🔵 Fetch calories for a month
 router.get('/daily-meta/month', authenticate, checkRole('superadmin'), async (req, res) => {

@@ -7,8 +7,8 @@ const DailyMetaSchema = new mongoose.Schema({
     unique: true, // 1 entry per date
   },
   calories: {
-    type: Number,
-    default: 0,
+    type: String, // 👈 changed from Number to String
+    required: true,
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
