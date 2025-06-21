@@ -95,23 +95,45 @@ exports.forgotPassword = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
+    // ✅ Create and hash reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
     user.resetPasswordToken = hashedToken;
-    user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
+    user.resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
     await user.save();
 
+    // ✅ Prepare reset URL
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
+    // ✅ HTML Email Template
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;border-radius:8px;background:#f9f9f9">
+        <h2 style="color:#ff2c2c;">DUNGENZ Password Reset</h2>
+        <p>Hello ${user.name || ''},</p>
+        <p>We received a request to reset your password.</p>
+        <p>
+          Click the button below to reset it. This link will expire in 1 hour.
+        </p>
+        <a href="${resetUrl}" style="display:inline-block;margin-top:20px;background:#ff2c2c;color:#fff;padding:10px 20px;border-radius:5px;text-decoration:none;">
+          Reset Password
+        </a>
+        <p style="margin-top:20px;color:#999;">If you didn’t request this, you can safely ignore this email.</p>
+        <hr style="margin-top:30px;"/>
+        <p style="font-size:12px;color:#bbb;">Powered by DUNGENZ</p>
+      </div>
+    `;
+
+    // ✅ Send the HTML email
     await sendEmail({
       to: user.email,
       subject: 'Reset Your Password',
-      text: `Click the link to reset your password: ${resetUrl}`
+      html
     });
 
     res.json({ message: 'Reset link sent to email' });
   } catch (err) {
-    console.error('Forgot password error:', err);
+    console.error('❌ Forgot password error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
