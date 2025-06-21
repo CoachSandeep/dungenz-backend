@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
 const { sendWelcomeNotification } = require('../utils/notifications');
+const crypto = require('crypto');
 
 // Utility to generate tokens
 const generateAccessToken = (userId, role) => {
