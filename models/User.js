@@ -15,6 +15,8 @@ const userSchema = new mongoose.Schema({
   gender: { type: String },
   age: { type: Number },
   profileImage: String,
+  resetPasswordToken: String,
+resetPasswordExpire: Date,
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
