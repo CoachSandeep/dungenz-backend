@@ -104,7 +104,7 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
     // ✅ Prepare reset URL
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+    const resetUrl = `https://dungenz-frontend.onrender.com/reset-password/${resetToken}`;
 
     // ✅ HTML Email Template
     const html = `
