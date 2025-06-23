@@ -28,17 +28,26 @@ router.post('/:date', async (req, res) => {
 
 // Like comment
 router.patch('/:date/:commentId/like', async (req, res) => {
-  const { userId } = req.body;
+  const { userId, name, avatar } = req.body;
   const { date, commentId } = req.params;
 
-  console.log("🧠 PATCH LIKE →", { date, commentId, userId });
+  console.log("🧠 PATCH LIKE →", { date, commentId, userId, name });
 
   await CommentDay.updateOne(
     { date, "comments._id": commentId },
-    { $addToSet: { "comments.$.likes": userId } }
+    {
+      $addToSet: {
+        "comments.$.likes": {
+          _id: userId,
+          name
+        }
+      }
+    }
   );
+
   res.json({ liked: true });
 });
+
 
 // Reply to a comment
 router.post('/:date/:commentId/reply', async (req, res) => {
