@@ -22,7 +22,7 @@ exports.updateProfile = async (req, res) => {
 
     // ✅ Add Cloudinary image URL if uploaded
     if (req.file && req.file.path) {
-      updateData.photo = req.file.path; // Cloudinary URL
+      updateData.profileImage = req.file.path; // Cloudinary URL
     }
 
     const updated = await User.findByIdAndUpdate(user._id, updateData, { new: true });
