@@ -18,7 +18,13 @@ const CommentSchema = new mongoose.Schema({
     avatar: String,
   },
   text: String,
-  likes: [String],
+  likes: [
+    {
+      userId: String,
+      name: String,
+      avatar: String
+    }
+  ],
   replies: [ReplySchema],
   createdAt: { type: Date, default: Date.now }
 });
