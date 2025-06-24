@@ -35,24 +35,18 @@ router.patch('/:date/:commentId/like', async (req, res) => {
   const comment = commentDoc?.comments.find(c => c._id.toString() === commentId);
   if (!comment) return res.status(404).json({ message: "Comment not found" });
 
-  const alreadyLiked = comment.likes?.some(
-    like =>
-      (typeof like === 'string' && like === userId) ||
-      (like?.userId && like.userId === userId) ||
-      (like?._id && like._id === userId)
+  // Detect if already liked
+  const alreadyLiked = comment.likes?.some(like =>
+    like === userId ||
+    (typeof like === 'object' && (
+      like.userId === userId ||
+      like._id === userId
+    ))
   );
 
   const updateQuery = alreadyLiked
-    ? {
-        $pull: {
-          "comments.$.likes": { userId: userId }
-        }
-      }
-    : {
-        $addToSet: {
-          "comments.$.likes": { userId, name, avatar }
-        }
-      };
+    ? { $pull: { "comments.$.likes": { $or: [{ userId }, { _id: userId }, userId] } } } // Unlike
+    : { $addToSet: { "comments.$.likes": { userId, name, avatar } } }; // Like
 
   await CommentDay.updateOne(
     { date, "comments._id": commentId },
@@ -61,6 +55,7 @@ router.patch('/:date/:commentId/like', async (req, res) => {
 
   res.json({ liked: !alreadyLiked });
 });
+
 
 
 // Reply to a comment
