@@ -36,13 +36,23 @@ router.patch('/:date/:commentId/like', async (req, res) => {
   if (!comment) return res.status(404).json({ message: "Comment not found" });
 
   const alreadyLiked = comment.likes?.some(
-    like => (typeof like === 'string' && like === userId) ||
-            (like?.userId && like.userId === userId)
+    like =>
+      (typeof like === 'string' && like === userId) ||
+      (like?.userId && like.userId === userId) ||
+      (like?._id && like._id === userId)
   );
 
   const updateQuery = alreadyLiked
-    ? { $pull: { "comments.$.likes": { userId } } } // unlike
-    : { $addToSet: { "comments.$.likes": { userId, name, avatar } } }; // like
+    ? {
+        $pull: {
+          "comments.$.likes": { userId: userId }
+        }
+      }
+    : {
+        $addToSet: {
+          "comments.$.likes": { userId, name, avatar }
+        }
+      };
 
   await CommentDay.updateOne(
     { date, "comments._id": commentId },
