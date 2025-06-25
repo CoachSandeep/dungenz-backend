@@ -5,7 +5,7 @@ const MovementVideo = require('../models/MovementVideo');
 // Upload a Workout
 exports.uploadWorkout = async (req, res) => {
   const { title, description, date, version, capTime, instructions, customName, icon, targetUser, adminNote, movements = [] } = req.body;
- 
+
   try {
     // ✅ Auto-check and create placeholder videos
     for (const move of movements) {
@@ -15,7 +15,7 @@ exports.uploadWorkout = async (req, res) => {
       }
     }
 
-  try {
+    // ✅ Now create the workout
     const newWorkout = await Workout.create({
       title,
       description,
@@ -30,8 +30,10 @@ exports.uploadWorkout = async (req, res) => {
       movements,
       adminNote
     });
+
     res.status(201).json(newWorkout);
   } catch (err) {
+    console.error("❌ Workout upload failed:", err);
     res.status(500).json({ message: err.message });
   }
 };
