@@ -1,9 +1,20 @@
 const Workout = require('../models/Workout');
 const Settings = require('../models/settings');
+const MovementVideo = require('../models/MovementVideo');
 
 // Upload a Workout
 exports.uploadWorkout = async (req, res) => {
-  const { title, description, date, version, capTime, instructions, customName, icon, targetUser } = req.body;
+  const { title, description, date, version, capTime, instructions, customName, icon, targetUser, adminNote, movements = [] } = req.body;
+ 
+  try {
+    // ✅ Auto-check and create placeholder videos
+    for (const move of movements) {
+      const exists = await MovementVideo.findOne({ name: move });
+      if (!exists) {
+        await MovementVideo.create({ name: move }); // creates a placeholder with just the name
+      }
+    }
+
   try {
     const newWorkout = await Workout.create({
       title,
@@ -15,7 +26,9 @@ exports.uploadWorkout = async (req, res) => {
       customName,
       icon,
       createdBy: req.user.id,
-      targetUser: targetUser || null
+      targetUser: targetUser || null,
+      movements,
+      adminNote
     });
     res.status(201).json(newWorkout);
   } catch (err) {

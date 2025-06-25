@@ -8,6 +8,7 @@ const workoutSchema = new mongoose.Schema({
   instructions: String,
   date: Date,
   capTime: String,
+  adminNote: { type: String, default: '' },
   icon: String,
   order: {
     type: Number,
@@ -42,6 +43,9 @@ const workoutSchema = new mongoose.Schema({
   type: mongoose.Schema.Types.ObjectId,
   ref: 'User',
   default: null // null = daily programming
+},movements: {
+  type: [String],
+  default: []
 },
 }, { timestamps: true });
 
