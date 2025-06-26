@@ -86,11 +86,10 @@ exports.listWorkoutsInRange = async (req, res) => {
     today.setHours(0, 0, 0, 0);
 
     const { from, to, user } = req.query;
-    const isSuperAdmin = req.user?.role === "superadmin";
 
     const settings = await Settings.findOne({});
     const releaseTime = settings?.releaseTime || "21:00";
-    const [releaseHour, releaseMinute] = releaseTime.split(":" ).map(Number);
+    const [releaseHour, releaseMinute] = releaseTime.split(":").map(Number);
     const releaseDateTime = new Date(today);
     releaseDateTime.setHours(releaseHour, releaseMinute, 0, 0);
 
@@ -103,7 +102,7 @@ exports.listWorkoutsInRange = async (req, res) => {
         allowedDates.push(d.toISOString().split("T")[0]);
       }
 
-      if (now >= releaseDateTime || isSuperAdmin) {
+      if (now >= releaseDateTime) {
         const tomorrow = new Date(today);
         tomorrow.setDate(today.getDate() + 1);
         allowedDates.push(tomorrow.toISOString().split("T")[0]);
@@ -122,11 +121,8 @@ exports.listWorkoutsInRange = async (req, res) => {
         tomorrow.setDate(today.getDate() + 1);
         tomorrow.setHours(0, 0, 0, 0);
 
-        if (dClone < today) {
-          allowedDates.push(dateKey);
-        } else if (dClone.getTime() === today.getTime()) {
-          allowedDates.push(dateKey);
-        } else if (dClone.getTime() === tomorrow.getTime() && (now >= releaseDateTime || isSuperAdmin)) {
+        if (dClone < today || dClone.getTime() === today.getTime() || 
+            (dClone.getTime() === tomorrow.getTime() && now >= releaseDateTime)) {
           allowedDates.push(dateKey);
         }
       }
@@ -134,49 +130,49 @@ exports.listWorkoutsInRange = async (req, res) => {
 
     let filter = { date: { $in: allowedDates } };
 
-    if (isSuperAdmin && user) {
-      filter.targetUser = user;
-    } else if (!isSuperAdmin) {
+    if (user) {
       filter.$or = [
-        { targetUser: null },
-        { targetUser: req.user._id }
+        { targetUser: user },
+        { targetUser: null }
       ];
     } else {
-      filter.targetUser = null;
+      filter.$or = [
+        { targetUser: req.user._id },
+        { targetUser: null }
+      ];
     }
 
-    const allWorkouts = await Workout.find(filter).populate("createdBy", "name");
+    const workouts = await Workout.find(filter)
+      .populate("createdBy", "name")
+      .lean(); // use lean for better performance if no virtuals needed
 
-    if (!isSuperAdmin) {
-      const grouped = {};
-      for (const w of allWorkouts) {
-        const key = w.date.toISOString().split('T')[0];
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(w);
-      }
-
-      const finalWorkouts = [];
-      for (const date in grouped) {
-        const dayWorkouts = grouped[date];
-        const personalized = dayWorkouts.filter(w => w.targetUser?.toString() === req.user._id.toString());
-
-        if (personalized.length > 0) {
-          finalWorkouts.push(...personalized);
-        } else {
-          const daily = dayWorkouts.filter(w => !w.targetUser);
-          finalWorkouts.push(...daily);
-        }
-      }
-
-      return res.json(finalWorkouts);
+    const grouped = {};
+    for (const w of workouts) {
+      const key = w.date.toISOString().split("T")[0];
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(w);
     }
 
-    res.json(allWorkouts);
+    const result = [];
+    for (const date in grouped) {
+      const dayWorkouts = grouped[date];
+      const personalized = dayWorkouts.filter(w => w.targetUser?.toString() === req.user._id.toString());
+
+      if (personalized.length > 0) {
+        result.push(...personalized);
+      } else {
+        const general = dayWorkouts.filter(w => !w.targetUser);
+        result.push(...general);
+      }
+    }
+
+    res.json(result);
   } catch (err) {
     console.error("❌ Error fetching workouts in range:", err);
     res.status(500).json({ message: "Workout fetch failed" });
   }
 };
+
 
 exports.getWorkoutsByMonth = async (req, res) => {
   const { year, month } = req.query;
