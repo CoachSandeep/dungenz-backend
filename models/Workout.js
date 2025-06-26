@@ -39,13 +39,14 @@ const workoutSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now }
   }],
  version: { type: String, enum: ['Ultra Train', 'Super Train', 'Minimal Equipment', 'Beginner'], required: true },
+ movements: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'MovementVideo'
+}],
  targetUser: {
   type: mongoose.Schema.Types.ObjectId,
   ref: 'User',
   default: null // null = daily programming
-},movements: {
-  type: [String],
-  default: []
 },
 }, { timestamps: true });
 

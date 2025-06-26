@@ -4,18 +4,23 @@ const MovementVideo = require('../models/MovementVideo');
 
 // Upload a Workout
 exports.uploadWorkout = async (req, res) => {
-  const { title, description, date, version, capTime, instructions, customName, icon, targetUser, adminNote, movements = [] } = req.body;
+  const {
+    title, description, date, version, capTime,
+    instructions, customName, icon, targetUser,
+    adminNote, movements = []
+  } = req.body;
 
   try {
-    // ✅ Auto-check and create placeholder videos
+    const movementIds = [];
+
     for (const move of movements) {
-      const exists = await MovementVideo.findOne({ name: move });
-      if (!exists) {
-        await MovementVideo.create({ name: move }); // creates a placeholder with just the name
+      let existing = await MovementVideo.findOne({ name: move });
+      if (!existing) {
+        existing = await MovementVideo.create({ name: move });
       }
+      movementIds.push(existing._id);
     }
 
-    // ✅ Now create the workout
     const newWorkout = await Workout.create({
       title,
       description,
@@ -27,7 +32,7 @@ exports.uploadWorkout = async (req, res) => {
       icon,
       createdBy: req.user.id,
       targetUser: targetUser || null,
-      movements,
+      movements: movementIds,
       adminNote
     });
 
@@ -145,7 +150,7 @@ exports.listWorkoutsInRange = async (req, res) => {
       filter.targetUser = null;
     }
 
-    const allWorkouts = await Workout.find(filter).populate("createdBy", "name");
+    const allWorkouts = await Workout.find(filter).populate("createdBy", "name").populate("movements", "name url");
 
     if (!isSuperAdmin) {
       const grouped = {};
