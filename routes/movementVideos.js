@@ -38,4 +38,19 @@ router.post('/', async (req, res) => {
   }
 });
 
+// GET /api/movement-videos/search?q=press
+router.get('/search', async (req, res) => {
+    const query = req.query.q;
+    if (!query) return res.status(400).json({ message: "Query param 'q' is required" });
+  
+    try {
+      const results = await MovementVideo.find({
+        name: { $regex: query, $options: 'i' }
+      }).select('name');
+      res.json(results);
+    } catch (err) {
+      res.status(500).json({ message: 'Server error', error: err.message });
+    }
+  });
+
 module.exports = router;
