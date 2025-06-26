@@ -12,24 +12,24 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ✅ POST: Add new video (or update existing if placeholder)
+// ✅ POST: Add new movement or update existing if placeholder
 router.post('/', async (req, res) => {
-  const { name, url } = req.body;
+  const { name, youtubeUrl } = req.body; // ✅ match frontend naming
   if (!name) return res.status(400).json({ error: 'Movement name is required' });
 
   try {
     const existing = await MovementVideo.findOne({ name });
 
     if (existing) {
-      if (!existing.url && url) {
-        existing.url = url;
+      if (!existing.url && youtubeUrl) {
+        existing.url = youtubeUrl;
         await existing.save();
         return res.json({ updated: true, video: existing });
       }
       return res.json({ exists: true, video: existing });
     }
 
-    const newVideo = new MovementVideo({ name, url });
+    const newVideo = new MovementVideo({ name, url: youtubeUrl });
     await newVideo.save();
     res.status(201).json({ created: true, video: newVideo });
 
@@ -38,19 +38,19 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/movement-videos/search?q=press
+// ✅ SEARCH: movement autocomplete
 router.get('/search', async (req, res) => {
-    const query = req.query.q;
-    if (!query) return res.status(400).json({ message: "Query param 'q' is required" });
-  
-    try {
-      const results = await MovementVideo.find({
-        name: { $regex: query, $options: 'i' }
-      }).select('name');
-      res.json(results);
-    } catch (err) {
-      res.status(500).json({ message: 'Server error', error: err.message });
-    }
-  });
+  const query = req.query.q;
+  if (!query) return res.status(400).json({ message: "Query param 'q' is required" });
+
+  try {
+    const results = await MovementVideo.find({
+      name: { $regex: query, $options: 'i' }
+    }).select('name url'); // include `url` now for frontend reference
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
 
 module.exports = router;
