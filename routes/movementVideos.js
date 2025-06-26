@@ -14,22 +14,22 @@ router.get('/', async (req, res) => {
 
 // ✅ POST: Add new movement or update existing if placeholder
 router.post('/', async (req, res) => {
-  const { name, youtubeUrl } = req.body; // ✅ match frontend naming
+  const { name, url } = req.body; // ✅ match frontend naming
   if (!name) return res.status(400).json({ error: 'Movement name is required' });
 
   try {
     const existing = await MovementVideo.findOne({ name });
 
     if (existing) {
-      if (!existing.url && youtubeUrl) {
-        existing.url = youtubeUrl;
+      if (!existing.url && url) {
+        existing.url = url;
         await existing.save();
         return res.json({ updated: true, video: existing });
       }
       return res.json({ exists: true, video: existing });
     }
 
-    const newVideo = new MovementVideo({ name, url: youtubeUrl });
+    const newVideo = new MovementVideo({ name, url: url });
     await newVideo.save();
     res.status(201).json({ created: true, video: newVideo });
 
