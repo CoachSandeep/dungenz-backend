@@ -277,9 +277,12 @@ router.get('/daily-meta/month', async (req, res) => {
   const toDate = new Date(fromDate);
   toDate.setMonth(toDate.getMonth() + 1);
 
+  // Add 1 day to include the first day of next month
+  const nextMonthFirstDay = new Date(toDate);
+
   try {
     const meta = await DailyMeta.find({
-      date: { $gte: fromDate, $lt: toDate },
+      date: { $gte: fromDate, $lt: new Date(nextMonthFirstDay.getTime() + 86400000) }, // add 1 day in ms
     });
 
     res.json(meta);
@@ -288,6 +291,7 @@ router.get('/daily-meta/month', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch daily meta' });
   }
 });
+
 
 router.delete('/daily-meta', authenticate, checkRole('superadmin'), async (req, res) => {
   const { date } = req.query;

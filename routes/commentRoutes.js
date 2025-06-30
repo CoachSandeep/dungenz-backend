@@ -1,3 +1,6 @@
+const Notification = require('../models/Notification');
+const PushToken = require('../models/PushToken');
+const admin = require('firebase-admin');
 const express = require('express');
 const router = express.Router();
 const CommentDay = require('../models/CommentDay');
@@ -12,19 +15,82 @@ router.get('/:date', async (req, res) => {
 });
 
 // Add new comment
-router.post('/:date', async (req, res) => {
-  const { text, user } = req.body;
-  const date = req.params.date;
-  const comment = { user, text, likes: [], replies: [] };
+router.post('/:date', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { text } = req.body;
+    const { date } = req.params;
 
-  const doc = await CommentDay.findOneAndUpdate(
-    { date },
-    { $push: { comments: comment } },
-    { upsert: true, new: true }
-  );
+    const comment = await Comment.create({
+      user: userId,
+      text,
+      date,
+      createdAt: new Date(),
+    });
 
-  res.json(doc.comments);
+    const user = await User.findById(userId);
+    const allUsers = await User.find({ _id: { $ne: userId } });
+
+    // 🔁 Helper to format label like "today's workout"
+    const getWorkoutLabel = (dateStr) => {
+      const today = new Date();
+      const target = new Date(dateStr);
+
+      today.setHours(0, 0, 0, 0);
+      target.setHours(0, 0, 0, 0);
+
+      const diffInDays = Math.floor((target - today) / (1000 * 60 * 60 * 24));
+
+      if (diffInDays === 0) return "Today's workout";
+      if (diffInDays === 1) return "Tomorrow's workout";
+      if (diffInDays === -1) return "Yesterday's workout";
+
+      return `the ${target.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })} workout`;
+    };
+
+    const workoutLabel = getWorkoutLabel(date);
+
+    // 💾 Save internal notifications
+    await Promise.all(
+      allUsers.map(u =>
+        Notification.create({
+          user: u._id,
+          title: `${user.name} commented on ${workoutLabel} 💬`,
+          link: `/workouts?date=${date}`,
+          type: 'comment',
+          date: new Date(),
+        })
+      )
+    );
+
+    // 🔔 Send Push Notifications
+    const rawTokens = await PushToken.find({ userId: { $in: allUsers.map(u => u._id) } }).select('token -_id');
+    const tokenList = [...new Set(rawTokens.map(t => t.token).filter(Boolean))];
+
+    if (tokenList.length > 0) {
+      const messages = tokenList.map(token => ({
+        token,
+        notification: {
+          title: `New comment by ${user.name}`,
+          body: `Check ${workoutLabel} 💬`
+        },
+        data: {
+          link: `/workouts?date=${date}`,
+          type: 'comment'
+        }
+      }));
+
+      const response = await admin.messaging().sendEach(messages);
+      console.log("🔔 Comment Push: Success:", response.successCount, " Failed:", response.failureCount);
+    }
+
+    res.status(201).json({ message: 'Comment added', comment });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Something went wrong' });
+  }
 });
+
 
 // Like comment
 router.patch('/:date/:commentId/like', async (req, res) => {
