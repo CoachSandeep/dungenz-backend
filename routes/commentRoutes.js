@@ -1,4 +1,3 @@
-const Notification = require('../models/Notification');
 const PushToken = require('../models/PushToken');
 const admin = require('firebase-admin');
 const express = require('express');
@@ -53,7 +52,7 @@ router.post('/:date', authMiddleware, async (req, res) => {
     // 💾 Save internal notifications
     await Promise.all(
       allUsers.map(u =>
-        Notification.create({
+        PushToken.create({
           user: u._id,
           title: `${user.name} commented on ${workoutLabel} 💬`,
           link: `/workouts?date=${date}`,
