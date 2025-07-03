@@ -93,28 +93,75 @@ router.post('/:date', authMiddleware, async (req, res) => {
 
 
 // Like comment
-router.patch('/:date/:commentId/like', async (req, res) => {
-  const { userId, name, avatar } = req.body;
+// Like comment with notification
+router.patch('/:date/:commentId/like', authMiddleware, async (req, res) => {
   const { date, commentId } = req.params;
+  const likerId = req.user.id;
 
-  const commentDoc = await CommentDay.findOne({ date });
-  if (!commentDoc) return res.status(404).json({ message: "Comment day not found" });
+  try {
+    const commentDoc = await CommentDay.findOne({ date });
+    if (!commentDoc) return res.status(404).json({ message: "Comment day not found" });
 
-  const comment = commentDoc.comments.find(c => c._id.toString() === commentId);
-  if (!comment) return res.status(404).json({ message: "Comment not found" });
+    const comment = commentDoc.comments.find(c => c._id.toString() === commentId);
+    if (!comment) return res.status(404).json({ message: "Comment not found" });
 
-  const isLiked = comment.likes.some(l => l.userId === userId);
+    const alreadyLiked = comment.likes.some(l => l.userId === likerId);
 
-  // Update likes array manually
-  if (isLiked) {
-    comment.likes = comment.likes.filter(l => l.userId !== userId); // Unlike
-  } else {
-    comment.likes.push({ userId, name, avatar }); // Like
+    const liker = await User.findById(likerId);
+    const commentOwnerId = comment.user?._id?.toString?.() || comment.user?.toString?.();
+
+    if (alreadyLiked) {
+      // Unlike
+      comment.likes = comment.likes.filter(l => l.userId !== likerId);
+    } else {
+      // Like
+      comment.likes.push({
+        userId: likerId,
+        name: liker.name,
+        avatar: liker.avatar
+      });
+
+      // Send notification only if not self-like
+      if (commentOwnerId && commentOwnerId !== likerId) {
+        // Internal Notification
+        await Notification.create({
+          user: commentOwnerId,
+          title: `${liker.name} liked your comment ❤️`,
+          link: `/workouts?date=${date}`,
+          type: 'like',
+          date: new Date()
+        });
+
+        // Push Notification
+        const tokens = await PushToken.find({ userId: commentOwnerId }).select('token -_id');
+        const tokenList = tokens.map(t => t.token).filter(Boolean);
+
+        if (tokenList.length > 0) {
+          const messages = tokenList.map(token => ({
+            token,
+            notification: {
+              title: '❤️ Someone liked your comment',
+              body: `${liker.name} liked your comment on the workout`
+            },
+            data: {
+              link: `/workouts?date=${date}`,
+              type: 'like'
+            }
+          }));
+
+          await admin.messaging().sendEach(messages);
+        }
+      }
+    }
+
+    await commentDoc.save();
+    res.json({ liked: !alreadyLiked });
+  } catch (err) {
+    console.error('🔥 Error in liking comment:', err);
+    res.status(500).json({ message: 'Server error' });
   }
-
-  await commentDoc.save();
-  res.json({ liked: !isLiked });
 });
+
 
 
 
