@@ -1,5 +1,6 @@
 const PushToken = require('../models/PushToken');
 const admin = require('firebase-admin');
+const authMiddleware = require('../middleware/authMiddleware');
 const express = require('express');
 const router = express.Router();
 const CommentDay = require('../models/CommentDay');
