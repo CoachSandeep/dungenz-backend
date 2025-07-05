@@ -72,7 +72,7 @@ router.post('/:date', authMiddleware, async (req, res) => {
     // 💾 Internal Notifications
     await Promise.all(
       allUsers.map(u =>
-        Notification.create({
+        PushToken.create({
           user: u._id,
           title: `${user.name} commented on ${workoutLabel} 💬`,
           link: `/workouts?date=${date}`,
@@ -144,7 +144,7 @@ router.patch('/:date/:commentId/like', authMiddleware, async (req, res) => {
       // Send notification only if not self-like
       if (commentOwnerId && commentOwnerId !== likerId) {
         // Internal Notification
-        await Notification.create({
+        await PushToken.create({
           user: commentOwnerId,
           title: `${liker.name} liked your comment ❤️`,
           link: `/workouts?date=${date}`,
