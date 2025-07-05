@@ -4,6 +4,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const express = require('express');
 const router = express.Router();
 const CommentDay = require('../models/CommentDay');
+const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
 
