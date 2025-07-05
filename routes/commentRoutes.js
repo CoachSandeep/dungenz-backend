@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const CommentDay = require('../models/CommentDay');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 const jwt = require('jsonwebtoken');
 
 
@@ -72,7 +73,7 @@ router.post('/:date', authMiddleware, async (req, res) => {
     // 💾 Internal Notifications
     await Promise.all(
       allUsers.map(u =>
-        PushToken.create({
+        Notification.create({
           user: u._id,
           title: `${user.name} commented on ${workoutLabel} 💬`,
           link: `/workouts?date=${date}`,
@@ -144,7 +145,7 @@ router.patch('/:date/:commentId/like', authMiddleware, async (req, res) => {
       // Send notification only if not self-like
       if (commentOwnerId && commentOwnerId !== likerId) {
         // Internal Notification
-        await PushToken.create({
+        await Notification.create({
           user: commentOwnerId,
           title: `${liker.name} liked your comment ❤️`,
           link: `/workouts?date=${date}`,
