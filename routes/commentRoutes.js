@@ -17,9 +17,15 @@ router.get('/:date', async (req, res) => {
 // Add new comment
 router.post('/:date', authMiddleware, async (req, res) => {
   try {
+    console.log("🚀 POST /comments/:date hit");
+
     const userId = req.user.id;
     const { text } = req.body;
     const { date } = req.params;
+
+    console.log("🧠 User ID from middleware:", userId);
+    console.log("📝 Comment text:", text);
+    console.log("📅 Target date:", date);
 
     const comment = await Comment.create({
       user: userId,
@@ -28,10 +34,19 @@ router.post('/:date', authMiddleware, async (req, res) => {
       createdAt: new Date(),
     });
 
-    const user = await User.findById(userId);
-    const allUsers = await User.find({ _id: { $ne: userId } });
+    console.log("✅ Comment saved:", comment);
 
-    // 🔁 Helper to format label like "today's workout"
+    const user = await User.findById(userId);
+    if (!user) {
+      console.log("❌ User not found:", userId);
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    console.log("👤 User info:", user.name);
+
+    const allUsers = await User.find({ _id: { $ne: userId } });
+    console.log("📨 Total users to notify:", allUsers.length);
+
     const getWorkoutLabel = (dateStr) => {
       const today = new Date();
       const target = new Date(dateStr);
@@ -49,11 +64,11 @@ router.post('/:date', authMiddleware, async (req, res) => {
     };
 
     const workoutLabel = getWorkoutLabel(date);
+    console.log("🏷️ Workout label:", workoutLabel);
 
-    // 💾 Save internal notifications
     await Promise.all(
       allUsers.map(u =>
-        PushToken.create({
+        Notification.create({
           user: u._id,
           title: `${user.name} commented on ${workoutLabel} 💬`,
           link: `/workouts?date=${date}`,
@@ -62,10 +77,11 @@ router.post('/:date', authMiddleware, async (req, res) => {
         })
       )
     );
+    console.log("📩 Internal notifications saved");
 
-    // 🔔 Send Push Notifications
     const rawTokens = await PushToken.find({ userId: { $in: allUsers.map(u => u._id) } }).select('token -_id');
     const tokenList = [...new Set(rawTokens.map(t => t.token).filter(Boolean))];
+    console.log("🔑 Total push tokens found:", tokenList.length);
 
     if (tokenList.length > 0) {
       const messages = tokenList.map(token => ({
@@ -80,14 +96,16 @@ router.post('/:date', authMiddleware, async (req, res) => {
         }
       }));
 
+      console.log("📤 Sending push notifications...", messages.length);
+
       const response = await admin.messaging().sendEach(messages);
-      console.log("🔔 Comment Push: Success:", response.successCount, " Failed:", response.failureCount);
+      console.log("🔔 Push Sent - Success:", response.successCount, " Failed:", response.failureCount);
     }
 
     res.status(201).json({ message: 'Comment added', comment });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Something went wrong' });
+    console.error("❌ Something went wrong in comment POST:", err);
+    res.status(500).json({ error: 'Something went wrong', details: err.message });
   }
 });
 
