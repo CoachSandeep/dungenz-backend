@@ -17,36 +17,39 @@ router.get('/:date', async (req, res) => {
 // Add new comment
 router.post('/:date', authMiddleware, async (req, res) => {
   try {
-    console.log("🚀 POST /comments/:date hit");
-
     const userId = req.user.id;
     const { text } = req.body;
     const { date } = req.params;
 
-    console.log("🧠 User ID from middleware:", userId);
-    console.log("📝 Comment text:", text);
-    console.log("📅 Target date:", date);
-
-    const comment = await Comment.create({
-      user: userId,
-      text,
-      date,
-      createdAt: new Date(),
-    });
-
-    console.log("✅ Comment saved:", comment);
-
     const user = await User.findById(userId);
-    if (!user) {
-      console.log("❌ User not found:", userId);
-      return res.status(404).json({ error: "User not found" });
+
+    const comment = {
+      user: {
+        _id: user._id.toString(),
+        name: user.name,
+        avatar: user.avatar,
+      },
+      text,
+      likes: [],
+      replies: [],
+      createdAt: new Date(),
+    };
+
+    let doc = await CommentDay.findOne({ date });
+
+    if (!doc) {
+      doc = await CommentDay.create({
+        date,
+        comments: [comment],
+      });
+    } else {
+      doc.comments.push(comment);
+      await doc.save();
     }
 
-    console.log("👤 User info:", user.name);
-
     const allUsers = await User.find({ _id: { $ne: userId } });
-    console.log("📨 Total users to notify:", allUsers.length);
 
+    // 🗓️ Workout label
     const getWorkoutLabel = (dateStr) => {
       const today = new Date();
       const target = new Date(dateStr);
@@ -56,16 +59,16 @@ router.post('/:date', authMiddleware, async (req, res) => {
 
       const diffInDays = Math.floor((target - today) / (1000 * 60 * 60 * 24));
 
-      if (diffInDays === 0) return "Today's workout";
-      if (diffInDays === 1) return "Tomorrow's workout";
-      if (diffInDays === -1) return "Yesterday's workout";
+      if (diffInDays === 0) return "today's workout";
+      if (diffInDays === 1) return "tomorrow's workout";
+      if (diffInDays === -1) return "yesterday's workout";
 
       return `the ${target.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })} workout`;
     };
 
     const workoutLabel = getWorkoutLabel(date);
-    console.log("🏷️ Workout label:", workoutLabel);
 
+    // 💾 Internal Notifications
     await Promise.all(
       allUsers.map(u =>
         Notification.create({
@@ -77,11 +80,10 @@ router.post('/:date', authMiddleware, async (req, res) => {
         })
       )
     );
-    console.log("📩 Internal notifications saved");
 
+    // 🔔 Push Notifications
     const rawTokens = await PushToken.find({ userId: { $in: allUsers.map(u => u._id) } }).select('token -_id');
     const tokenList = [...new Set(rawTokens.map(t => t.token).filter(Boolean))];
-    console.log("🔑 Total push tokens found:", tokenList.length);
 
     if (tokenList.length > 0) {
       const messages = tokenList.map(token => ({
@@ -96,18 +98,17 @@ router.post('/:date', authMiddleware, async (req, res) => {
         }
       }));
 
-      console.log("📤 Sending push notifications...", messages.length);
-
       const response = await admin.messaging().sendEach(messages);
-      console.log("🔔 Push Sent - Success:", response.successCount, " Failed:", response.failureCount);
+      console.log("🔔 Comment Push: Success:", response.successCount, " Failed:", response.failureCount);
     }
 
     res.status(201).json({ message: 'Comment added', comment });
   } catch (err) {
-    console.error("❌ Something went wrong in comment POST:", err);
+    console.error("🔥 Comment POST error:", err);
     res.status(500).json({ error: 'Something went wrong', details: err.message });
   }
 });
+
 
 
 // Like comment
