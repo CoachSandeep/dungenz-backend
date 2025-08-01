@@ -178,7 +178,9 @@ router.get('/month', authenticate, checkRole('superadmin'), async (req, res) => 
 
     const workouts = await Workout.find({
       date: { $gte: fromDate, $lt: toDate }
-    }).sort({ date: 1 });
+    })
+      .sort({ date: 1 })
+      .populate('user', 'name email'); // ✅ ADD THIS LINE
 
     res.json(workouts);
   } catch (err) {
