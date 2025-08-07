@@ -38,7 +38,7 @@ exports.listUsers = async (req, res) => {
     if (req.user.role !== 'superadmin') {
       return res.status(403).json({ message: 'Access denied' });
     }
-    const users = await User.find({}, '_id name email');
+    const users = await User.find({}, '_id name email isIndividualProgram');
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching users', error: err.message });
