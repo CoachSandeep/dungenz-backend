@@ -10,6 +10,10 @@ const userSchema = new mongoose.Schema({
     enum: ['member', 'admin', 'superadmin'],
     default: 'member'
   },
+  isIndividualProgram: {
+    type: Boolean,
+    default: false
+  },
   
   bio: { type: String, default: '' },
   gender: { type: String },

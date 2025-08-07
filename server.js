@@ -14,6 +14,7 @@ const userRoutes = require('./routes/UserRoutes');
 const authRoutes = require('./routes/authRoutes');
 const workoutRoutes = require('./routes/workoutRoutes');
 const commentRoutes = require('./routes/commentRoutes');
+const dailyNotes = require('./routes/dailyNoteRoutes');
 const movementVideoRoutes = require('./routes/movementVideos');
 
 // ✅ Load env variables
@@ -52,6 +53,7 @@ app.use('/api/workouts', workoutRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/settings', settings);
 app.use('/api/comments', commentRoutes);
+app.use('/api/daily-notes', dailyNotes);
 app.use('/api/movements', movementVideoRoutes);
 
 app.get('/', (req, res) => {

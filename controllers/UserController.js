@@ -84,6 +84,31 @@ exports.toggleUserActive = async (req, res) => {
   }
 };
 
+// ✅ Toggle Individual Programming
+exports.toggleIndividualProgramming = async (req, res) => {
+  try {
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const { id } = req.params;
+    const { value } = req.body; // true or false
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { isIndividualProgram: value },
+      { new: true }
+    );
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json({ message: `Individual programming ${value ? 'enabled' : 'disabled'} for ${user.name}`, user });
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating individual programming', error: err.message });
+  }
+};
+
+
 // Delete user
 exports.deleteUser = async (req, res) => {
   try {
