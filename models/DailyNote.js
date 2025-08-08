@@ -9,7 +9,6 @@ const DailyNoteSchema = new mongoose.Schema({
   date: {
     type: Date,
     required: true,
-    unique: true, // 1 entry per date
   },
   userNote: {
     type: String,
@@ -24,5 +23,6 @@ const DailyNoteSchema = new mongoose.Schema({
 });
 
 // DailyNoteSchema.index({ user: 1, date: 1 }, { unique: true });
+db.dailynotes.dropIndex('date_1');
 
 module.exports = mongoose.model('DailyNote', DailyNoteSchema);
