@@ -19,10 +19,10 @@ const DailyNoteSchema = new mongoose.Schema({
     default: '',
   },
 }, {
-  timestamps: true
+  timestamps: true,
 });
 
-// DailyNoteSchema.index({ user: 1, date: 1 }, { unique: true });
-db.dailynotes.dropIndex('date_1');
+// Enforce one note per user per date
+DailyNoteSchema.index({ user: 1, date: 1 }, { unique: true });
 
 module.exports = mongoose.model('DailyNote', DailyNoteSchema);
