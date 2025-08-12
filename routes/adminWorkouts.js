@@ -218,7 +218,7 @@ router.post('/copy-day', authenticate, checkRole('superadmin'), async (req, res)
         date: new Date(toDate),
         createdBy: req.user._id,
         copiedFrom: workout._id,
-        assignedToUser: user === 'all' ? null : user
+        targetUser: user === 'all' ? null : user
       });
 
       await newWorkout.save();
