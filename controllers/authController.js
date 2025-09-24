@@ -73,7 +73,7 @@ exports.login = async (req, res) => {
 
     res.json({
       token: accessToken,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role, bio:user.bio, profileImage: user.profileImage, isIndividualProgram:user.isIndividualProgram }
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, bio:user.bio, profileImage: user.profileImage, isIndividualProgram:user.isIndividualProgram, isActive:user.isActive }
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
