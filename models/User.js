@@ -14,6 +14,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isActive: {
+    type: Boolean,
+    default: false   // naye user by default inactive honge
+  },
   
   bio: { type: String, default: '' },
   gender: { type: String },
